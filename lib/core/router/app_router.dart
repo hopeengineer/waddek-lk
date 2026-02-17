@@ -13,6 +13,10 @@ import '../../features/jobs/presentation/screens/my_jobs_screen.dart';
 import '../../features/jobs/presentation/screens/job_detail_screen.dart';
 import '../services/supabase_service.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../../features/wallet/presentation/screens/wallet_screen.dart';
+import '../../features/wallet/presentation/screens/top_up_screen.dart';
+import '../../features/wallet/presentation/screens/transaction_history_screen.dart';
+import '../../features/subscription/presentation/screens/pro_pass_screen.dart';
 
 /// GoRouter configuration with auth guards and role-based navigation.
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -117,8 +121,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/wallet',
             name: 'wallet',
-            builder: (context, state) =>
-                const _PlaceholderScreen(title: 'Wallet'),
+            builder: (context, state) => const WalletScreen(),
           ),
           GoRoute(
             path: '/worker/profile',
@@ -141,6 +144,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final jobId = state.pathParameters['id']!;
           return JobDetailScreen(jobId: jobId);
         },
+      ),
+      GoRoute(
+        path: '/wallet/topup',
+        name: 'topup',
+        builder: (context, state) => const TopUpScreen(),
+      ),
+      GoRoute(
+        path: '/wallet/transactions',
+        name: 'transactions',
+        builder: (context, state) => const TransactionHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/propass',
+        name: 'propass',
+        builder: (context, state) => const ProPassScreen(),
       ),
     ],
   );
