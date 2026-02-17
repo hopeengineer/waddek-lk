@@ -5,6 +5,5 @@ export async function POST(_request: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.delete("admin_session");
 
-    // Redirect to login page after logout
     return NextResponse.redirect(new URL("/admin/login", _request.url));
 }

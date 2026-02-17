@@ -3,15 +3,20 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Allow login page and auth API without session
-    if (pathname === "/admin/login" || pathname.startsWith("/admin/api/auth")) {
+    // Only protect /admin routes
+    if (!pathname.startsWith("/admin")) {
         return NextResponse.next();
     }
 
-    // Allow static assets (images, favicon, etc.)
+    // Allow login page and auth API without session
+    if (pathname === "/admin/login" || pathname.startsWith("/api/auth")) {
+        return NextResponse.next();
+    }
+
+    // Allow static assets
     if (
-        pathname.startsWith("/admin/_next") ||
-        pathname.match(/\.(png|jpg|jpeg|ico|svg|css|js)$/)
+        pathname.startsWith("/_next") ||
+        pathname.match(/\.(png|jpg|jpeg|ico|svg|css|js|json|woff|woff2|ttf|otf)$/)
     ) {
         return NextResponse.next();
     }

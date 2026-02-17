@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Waddek Admin Dashboard",
-  description: "Admin panel for Waddek.lk — manage workers, disputes, and users",
-  icons: { icon: "/admin/logo.png" },
+  title: "Waddek.lk",
+  description: "On-demand service marketplace for Sri Lanka",
+  icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({
@@ -14,6 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <base href="/" />
+      </head>
       <body>
         {children}
       </body>
