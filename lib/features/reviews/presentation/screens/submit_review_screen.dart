@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/neon_button.dart';
-import '../providers/reviews_provider.dart';
+import 'package:waddek_lk/core/theme/app_colors.dart';
+import 'package:waddek_lk/core/widgets/neon_button.dart';
+import 'package:waddek_lk/features/reviews/presentation/providers/reviews_provider.dart';
 
 /// Submit review screen — prompted after job completion.
 class SubmitReviewScreen extends ConsumerStatefulWidget {

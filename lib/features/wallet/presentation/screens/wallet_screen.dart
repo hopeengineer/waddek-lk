@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/neon_button.dart';
-import '../../../core/widgets/neon_card.dart';
-import '../../../core/widgets/loading_shimmer.dart';
-import '../../profile/presentation/providers/profile_provider.dart';
-import '../../subscription/presentation/providers/subscription_provider.dart';
-import '../presentation/providers/wallet_provider.dart';
+import 'package:waddek_lk/core/theme/app_colors.dart';
+import 'package:waddek_lk/core/widgets/neon_button.dart';
+import 'package:waddek_lk/core/widgets/neon_card.dart';
+import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
+import 'package:waddek_lk/features/profile/presentation/providers/profile_provider.dart';
+import 'package:waddek_lk/features/subscription/presentation/providers/subscription_provider.dart';
+import '../providers/wallet_provider.dart';
 
 /// Wallet overview screen — balance, top-up, Pro Pass upsell.
 class WalletScreen extends ConsumerWidget {

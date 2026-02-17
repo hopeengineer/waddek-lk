@@ -1,3 +1,4 @@
+import 'dart:io' as java_io;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/supabase_constants.dart';
@@ -9,7 +10,6 @@ import '../domain/bid_model.dart';
 /// Data layer for job and bid operations.
 class JobsRepository {
   final _client = SupabaseService.client;
-  final _storage = StorageService();
 
   // ── Jobs — Read ──────────────────────────────────────────
 
@@ -134,10 +134,11 @@ class JobsRepository {
   }) async {
     final urls = <String>[];
     for (int i = 0; i < filePaths.length; i++) {
-      final url = await _storage.uploadFile(
-        bucket: SupabaseConstants.jobPhotosBucket,
-        path: '$jobId/photo_$i.jpg',
-        filePath: filePaths[i],
+      final file = await java_io.File(filePaths[i]).readAsBytes();
+      final url = await StorageService.uploadJobPhoto(
+        jobId,
+        'photo_$i',
+        file,
       );
       urls.add(url);
     }

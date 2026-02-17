@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../core/constants/supabase_constants.dart';
-import '../../core/services/supabase_service.dart';
+import 'package:waddek_lk/core/constants/supabase_constants.dart';
+import 'package:waddek_lk/core/services/supabase_service.dart';
 
 /// Handles authentication via custom OTP flow (Notify.lk) and Supabase Auth.
 class AuthRepository {

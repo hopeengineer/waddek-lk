@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/jobs_repository.dart';
-import '../domain/job_model.dart';
-import '../domain/bid_model.dart';
+import '../../data/jobs_repository.dart';
+import '../../domain/job_model.dart';
+import '../../domain/bid_model.dart';
 
 /// Provides [JobsRepository] singleton.
 final jobsRepositoryProvider = Provider<JobsRepository>((ref) {

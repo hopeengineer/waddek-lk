@@ -10,6 +10,11 @@ abstract class AppColors {
   static const surfaceDark = Color(0xFF1A1A3D);
   static const cardDark = Color(0xFF222250);
 
+  // Convenience aliases used by screens
+  static const bgDark = scaffoldDark;
+  static const bgSurface = surfaceDark;
+  static const bgCard = cardDark;
+
   // ── Neon Accents ────────────────────────────────────────
   static const neonCyan = Color(0xFF00E5FF);
   static const neonPurple = Color(0xFFBB86FC);

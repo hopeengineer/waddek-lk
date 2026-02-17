@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/reviews_repository.dart';
-import '../domain/review_model.dart';
+import '../../data/reviews_repository.dart';
+import '../../domain/review_model.dart';
 
 final reviewsRepositoryProvider = Provider<ReviewsRepository>((ref) {
   return ReviewsRepository();

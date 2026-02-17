@@ -46,11 +46,30 @@ class ProfileModel with _$ProfileModel {
         lat = (coords[1] as num).toDouble();
       }
     }
-    return _$ProfileModelFromJson({
-      ...json,
-      'latitude': lat ?? json['latitude'],
-      'longitude': lng ?? json['longitude'],
-    });
+    return ProfileModel(
+      id: json['id'] as String,
+      phone: json['phone'] as String? ?? '',
+      role: json['role'] as String? ?? 'customer',
+      tier: json['tier'] as String? ?? 'waddek',
+      email: json['email'] as String?,
+      fullName: json['full_name'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      bio: json['bio'] as String?,
+      isOnline: json['is_online'] as bool? ?? false,
+      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0,
+      jobsCompletedCount: (json['jobs_completed_count'] as num?)?.toInt() ?? 0,
+      verificationStatus: json['verification_status'] as String? ?? 'unverified',
+      nicFrontUrl: json['nic_front_url'] as String?,
+      nicBackUrl: json['nic_back_url'] as String?,
+      nicNumber: json['nic_number'] as String?,
+      fcmToken: json['fcm_token'] as String?,
+      preferredLocale: json['preferred_locale'] as String? ?? 'en',
+      addressText: json['address_text'] as String?,
+      latitude: lat ?? (json['latitude'] as num?)?.toDouble(),
+      longitude: lng ?? (json['longitude'] as num?)?.toDouble(),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null,
+    );
   }
 }
 
@@ -86,9 +105,12 @@ class WorkerCategoryModel with _$WorkerCategoryModel {
   factory WorkerCategoryModel.fromJson(Map<String, dynamic> json) {
     // Handle nested category join from Supabase
     final catData = json['categories'];
-    return _$WorkerCategoryModelFromJson({
-      ...json,
-      if (catData is Map<String, dynamic>) 'category': catData,
-    });
+    return WorkerCategoryModel(
+      id: json['id'] as String,
+      workerId: json['worker_id'] as String,
+      categoryId: json['category_id'] as String,
+      experienceYears: (json['experience_years'] as num?)?.toInt() ?? 0,
+      category: catData is Map<String, dynamic> ? CategoryModel.fromJson(catData) : null,
+    );
   }
 }

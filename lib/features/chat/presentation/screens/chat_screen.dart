@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/loading_shimmer.dart';
-import '../../../core/services/supabase_service.dart';
-import '../presentation/providers/chat_provider.dart';
-import '../domain/message_model.dart';
+import 'package:waddek_lk/core/theme/app_colors.dart';
+import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
+import 'package:waddek_lk/core/services/supabase_service.dart';
+import 'package:waddek_lk/features/chat/presentation/providers/chat_provider.dart';
+import 'package:waddek_lk/features/chat/domain/message_model.dart';
 
 /// Chat screen — realtime messaging with a matched party.
 class ChatScreen extends ConsumerStatefulWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/subscription_repository.dart';
-import '../domain/subscription_model.dart';
+import '../../data/subscription_repository.dart';
+import '../../domain/subscription_model.dart';
 
 final subscriptionRepositoryProvider =
     Provider<SubscriptionRepository>((ref) {

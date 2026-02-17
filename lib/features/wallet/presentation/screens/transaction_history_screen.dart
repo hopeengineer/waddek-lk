@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/neon_card.dart';
-import '../../../core/widgets/loading_shimmer.dart';
-import '../../profile/presentation/providers/profile_provider.dart';
-import '../presentation/providers/wallet_provider.dart';
-import '../domain/wallet_model.dart';
+import 'package:waddek_lk/core/theme/app_colors.dart';
+import 'package:waddek_lk/core/widgets/neon_card.dart';
+import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
+import 'package:waddek_lk/features/profile/presentation/providers/profile_provider.dart';
+import 'package:waddek_lk/features/wallet/presentation/providers/wallet_provider.dart';
+import 'package:waddek_lk/features/wallet/domain/wallet_model.dart';
 
 /// Transaction history screen — shows all wallet transactions.
 class TransactionHistoryScreen extends ConsumerWidget {

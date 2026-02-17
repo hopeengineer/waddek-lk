@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/disputes_repository.dart';
-import '../domain/dispute_model.dart';
+import '../../data/disputes_repository.dart';
+import '../../domain/dispute_model.dart';
 
 final disputesRepositoryProvider = Provider<DisputesRepository>((ref) {
   return DisputesRepository();

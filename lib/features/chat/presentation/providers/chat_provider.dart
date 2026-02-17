@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/chat_repository.dart';
-import '../domain/message_model.dart';
+import '../../data/chat_repository.dart';
+import '../../domain/message_model.dart';
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   return ChatRepository();

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/loading_shimmer.dart';
-import '../../profile/presentation/providers/profile_provider.dart';
-import '../presentation/providers/notifications_provider.dart';
-import '../domain/notification_model.dart';
+import 'package:waddek_lk/core/theme/app_colors.dart';
+import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
+import 'package:waddek_lk/features/profile/presentation/providers/profile_provider.dart';
+import 'package:waddek_lk/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:waddek_lk/features/notifications/domain/notification_model.dart';
 
 /// Notifications screen — realtime feed with mark-all-read.
 class NotificationsScreen extends ConsumerWidget {

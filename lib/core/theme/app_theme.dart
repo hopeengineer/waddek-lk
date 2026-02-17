@@ -53,7 +53,7 @@ abstract class AppTheme {
       ),
 
       // ── Cards ─────────────────────────────────────────────
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.cardDark,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -156,7 +156,7 @@ abstract class AppTheme {
       ),
 
       // ── Dialogs ───────────────────────────────────────────
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surfaceDark,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),

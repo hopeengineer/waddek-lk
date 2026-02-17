@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'job_model.freezed.dart';
-part 'job_model.g.dart';
 
 /// Represents a job posted by a customer.
 @freezed
@@ -42,10 +41,27 @@ class JobModel with _$JobModel {
         lat = (coords[1] as num).toDouble();
       }
     }
-    return _$JobModelFromJson({
-      ...json,
-      'latitude': lat ?? json['latitude'],
-      'longitude': lng ?? json['longitude'],
-    });
+    return JobModel(
+      id: json['id'] as String,
+      customerId: json['customer_id'] as String,
+      categoryId: json['category_id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String?,
+      address: json['address'] as String?,
+      budgetMin: (json['budget_min'] as num?)?.toDouble(),
+      budgetMax: (json['budget_max'] as num?)?.toDouble(),
+      status: json['status'] as String? ?? 'draft',
+      matchedWorkerId: json['matched_worker_id'] as String?,
+      scheduledAt: json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at'] as String) : null,
+      photoUrls: (json['photo_urls'] as List?)?.cast<String>(),
+      broadcastRadiusKm: (json['broadcast_radius_km'] as num?)?.toInt() ?? 5,
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null,
+      latitude: lat ?? (json['latitude'] as num?)?.toDouble(),
+      longitude: lng ?? (json['longitude'] as num?)?.toDouble(),
+      customerData: json['customer'] as Map<String, dynamic>?,
+      categoryData: json['category'] as Map<String, dynamic>?,
+      bidCount: (json['bid_count'] as num?)?.toInt(),
+    );
   }
 }

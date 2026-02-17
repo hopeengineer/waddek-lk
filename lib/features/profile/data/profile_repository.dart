@@ -1,14 +1,15 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/constants/supabase_constants.dart';
-import '../../../core/services/supabase_service.dart';
-import '../../../core/services/storage_service.dart';
-import '../domain/profile_model.dart';
+import 'package:waddek_lk/core/constants/supabase_constants.dart';
+import 'package:waddek_lk/core/services/supabase_service.dart';
+import 'package:waddek_lk/core/services/storage_service.dart';
+import 'package:waddek_lk/features/profile/domain/profile_model.dart';
 
 /// Data layer for profile operations.
 class ProfileRepository {
   final _client = SupabaseService.client;
-  final _storage = StorageService();
 
   // ── Read ──────────────────────────────────────────────────
 
@@ -117,11 +118,8 @@ class ProfileRepository {
     required String userId,
     required String filePath,
   }) async {
-    final url = await _storage.uploadFile(
-      bucket: SupabaseConstants.avatarsBucket,
-      path: '$userId/avatar.jpg',
-      filePath: filePath,
-    );
+    final bytes = await File(filePath).readAsBytes();
+    final url = await StorageService.uploadAvatar(userId, bytes);
     await updateProfile(userId: userId, fields: {'avatar_url': url});
     return url;
   }
@@ -133,16 +131,10 @@ class ProfileRepository {
     required String backPath,
     required String nicNumber,
   }) async {
-    final frontUrl = await _storage.uploadFile(
-      bucket: SupabaseConstants.nicPhotosBucket,
-      path: '$userId/front.jpg',
-      filePath: frontPath,
-    );
-    final backUrl = await _storage.uploadFile(
-      bucket: SupabaseConstants.nicPhotosBucket,
-      path: '$userId/back.jpg',
-      filePath: backPath,
-    );
+    final frontBytes = await File(frontPath).readAsBytes();
+    final backBytes = await File(backPath).readAsBytes();
+    final frontUrl = await StorageService.uploadNicPhoto(userId, 'front', frontBytes);
+    final backUrl = await StorageService.uploadNicPhoto(userId, 'back', backBytes);
     await updateProfile(userId: userId, fields: {
       'nic_front_url': frontUrl,
       'nic_back_url': backUrl,
@@ -185,12 +177,9 @@ class ProfileRepository {
     String? caption,
   }) async {
     final fileName =
-        '${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final url = await _storage.uploadFile(
-      bucket: SupabaseConstants.portfolioBucket,
-      path: '$workerId/$fileName',
-      filePath: filePath,
-    );
+        '${DateTime.now().millisecondsSinceEpoch}';
+    final bytes = await File(filePath).readAsBytes();
+    final url = await StorageService.uploadPortfolioImage(workerId, fileName, bytes);
     await _client.from(SupabaseConstants.portfolioImages).insert({
       'worker_id': workerId,
       'image_url': url,

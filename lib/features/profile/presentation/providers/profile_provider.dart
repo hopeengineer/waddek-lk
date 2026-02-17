@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/profile_repository.dart';
-import '../domain/profile_model.dart';
+import '../../data/profile_repository.dart';
+import '../../domain/profile_model.dart';
 
 /// Provides [ProfileRepository] singleton.
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/wallet_repository.dart';
-import '../domain/wallet_model.dart';
+import '../../data/wallet_repository.dart';
+import '../../domain/wallet_model.dart';
 
 final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   return WalletRepository();

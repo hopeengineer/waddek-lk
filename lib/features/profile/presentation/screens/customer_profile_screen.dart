@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/neon_button.dart';
-import '../../../core/widgets/neon_card.dart';
-import '../../../core/widgets/loading_shimmer.dart';
+import 'package:waddek_lk/core/theme/app_colors.dart';
+import 'package:waddek_lk/core/widgets/neon_button.dart';
+import 'package:waddek_lk/core/widgets/neon_card.dart';
+import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import '../providers/profile_provider.dart';
 
 /// Customer profile screen — view and edit basic info.
