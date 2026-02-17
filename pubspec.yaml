@@ -1,0 +1,75 @@
+name: waddek_lk
+description: On-demand service marketplace for Sri Lanka
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Routing
+  go_router: ^14.8.0
+
+  # Backend
+  supabase_flutter: ^2.8.0
+
+  # Maps & Location
+  google_maps_flutter: ^2.10.0
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
+
+  # Push Notifications
+  firebase_core: ^3.12.1
+  firebase_messaging: ^15.2.4
+
+  # Media
+  image_picker: ^1.1.2
+  cached_network_image: ^3.4.1
+
+  # Local Notifications
+  flutter_local_notifications: ^18.0.1
+
+  # Data Models
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Utilities
+  intl: ^0.20.2
+  url_launcher: ^6.3.1
+
+  # Payments
+  payhere_mobilesdk_flutter: ^3.2.2
+
+  # UI
+  shimmer: ^3.0.0
+  flutter_animate: ^4.5.2
+  lottie: ^3.3.1
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.9.4
+  riverpod_generator: ^2.6.3
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  generate: true
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/animations/
