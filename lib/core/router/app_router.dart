@@ -17,6 +17,9 @@ import '../../features/wallet/presentation/screens/wallet_screen.dart';
 import '../../features/wallet/presentation/screens/top_up_screen.dart';
 import '../../features/wallet/presentation/screens/transaction_history_screen.dart';
 import '../../features/subscription/presentation/screens/pro_pass_screen.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/chat/presentation/screens/conversations_screen.dart';
+import '../../features/chat/presentation/screens/chat_screen.dart';
 
 /// GoRouter configuration with auth guards and role-based navigation.
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -91,8 +94,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/notifications',
             name: 'notifications',
-            builder: (context, state) =>
-                const _PlaceholderScreen(title: 'Notifications'),
+            builder: (context, state) => const NotificationsScreen(),
           ),
           GoRoute(
             path: '/customer/profile',
@@ -159,6 +161,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/propass',
         name: 'propass',
         builder: (context, state) => const ProPassScreen(),
+      ),
+      GoRoute(
+        path: '/conversations',
+        name: 'conversations',
+        builder: (context, state) => const ConversationsScreen(),
+      ),
+      GoRoute(
+        path: '/chat/:id',
+        name: 'chat',
+        builder: (context, state) {
+          final conversationId = state.pathParameters['id']!;
+          return ChatScreen(conversationId: conversationId);
+        },
       ),
     ],
   );
