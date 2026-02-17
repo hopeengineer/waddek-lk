@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Waddek Admin Dashboard",
   description: "Admin panel for Waddek.lk — manage workers, disputes, and users",
+  icons: { icon: "/logo.png" },
 };
 
 const navItems = [
@@ -27,7 +29,7 @@ export default function RootLayout({
           <aside className="sidebar">
             <div className="sidebar-header">
               <h1 className="brand">
-                <span className="brand-icon">⚡</span>
+                <Image src="/logo.png" alt="Waddek" width={36} height={36} className="brand-logo" />
                 Waddek
               </h1>
               <span className="brand-sub">Admin Panel</span>

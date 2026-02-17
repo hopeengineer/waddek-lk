@@ -61,8 +61,10 @@ body {
   letter-spacing: -0.5px;
 }
 
-.brand-icon {
-  margin-right: 6px;
+.brand-logo {
+  border-radius: 8px;
+  margin-right: 8px;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
 }
 
 .brand-sub {
@@ -177,10 +179,21 @@ body {
   color: var(--neon-cyan);
 }
 
-.stat-value.green { color: var(--neon-green); }
-.stat-value.amber { color: var(--neon-amber); }
-.stat-value.red { color: var(--neon-red); }
-.stat-value.purple { color: var(--neon-purple); }
+.stat-value.green {
+  color: var(--neon-green);
+}
+
+.stat-value.amber {
+  color: var(--neon-amber);
+}
+
+.stat-value.red {
+  color: var(--neon-red);
+}
+
+.stat-value.purple {
+  color: var(--neon-purple);
+}
 
 /* ── Data Table ─────────────────────────────────────────── */
 .data-table-wrapper {
@@ -237,17 +250,21 @@ body {
   color: var(--neon-amber);
 }
 
-.badge-active, .badge-verified, .badge-resolved {
+.badge-active,
+.badge-verified,
+.badge-resolved {
   background: rgba(0, 255, 136, 0.15);
   color: var(--neon-green);
 }
 
-.badge-rejected, .badge-dismissed {
+.badge-rejected,
+.badge-dismissed {
   background: rgba(255, 68, 102, 0.15);
   color: var(--neon-red);
 }
 
-.badge-open, .badge-investigating {
+.badge-open,
+.badge-investigating {
   background: rgba(0, 240, 255, 0.15);
   color: var(--neon-cyan);
 }
@@ -350,10 +367,12 @@ body {
   .sidebar {
     display: none;
   }
+
   .main-content {
     margin-left: 0;
     padding: 20px;
   }
+
   .stats-grid {
     grid-template-columns: 1fr 1fr;
   }
