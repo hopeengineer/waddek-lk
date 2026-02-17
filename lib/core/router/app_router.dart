@@ -20,6 +20,8 @@ import '../../features/subscription/presentation/screens/pro_pass_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/chat/presentation/screens/conversations_screen.dart';
 import '../../features/chat/presentation/screens/chat_screen.dart';
+import '../../features/reviews/presentation/screens/submit_review_screen.dart';
+import '../../features/disputes/presentation/screens/raise_dispute_screen.dart';
 
 /// GoRouter configuration with auth guards and role-based navigation.
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -173,6 +175,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final conversationId = state.pathParameters['id']!;
           return ChatScreen(conversationId: conversationId);
+        },
+      ),
+      GoRoute(
+        path: '/review',
+        name: 'submit-review',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String>;
+          return SubmitReviewScreen(
+            jobId: extra['jobId']!,
+            workerId: extra['workerId']!,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/dispute/:jobId',
+        name: 'raise-dispute',
+        builder: (context, state) {
+          final jobId = state.pathParameters['jobId']!;
+          return RaiseDisputeScreen(jobId: jobId);
         },
       ),
     ],
