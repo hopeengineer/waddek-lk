@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "43420047021",
+    "project_id": "waddek-firebase",
+    "storage_bucket": "waddek-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:43420047021:android:2833fbe5351f1b41565824",
+        "android_client_info": {
+          "package_name": "com.waddek.waddek_lk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDUqnswOTsuEUPryreqk0bKBCnW15Pe3g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
