@@ -61,8 +61,8 @@ class AuthRepository {
     }
 
     // Set session from the returned tokens
-    if (data['access_token'] != null) {
-      await _client.auth.setSession(data['access_token'] as String);
+    if (data['access_token'] != null && data['refresh_token'] != null) {
+      await _client.auth.setSession(data['refresh_token'] as String);
     }
 
     return data;

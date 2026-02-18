@@ -128,20 +128,27 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: List.generate(6, (index) {
                     return SizedBox(
-                      width: 48,
-                      height: 56,
+                      width: 52,
+                      height: 60,
                       child: TextField(
                         controller: _controllers[index],
                         focusNode: _focusNodes[index],
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         maxLength: 1,
-                        style: AppTextStyles.h3.copyWith(color: AppColors.neonCyan),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.neonCyan,
+                          fontFamily: 'monospace',
+                          letterSpacing: 0,
+                        ),
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         decoration: InputDecoration(
                           counterText: '',
                           filled: true,
                           fillColor: AppColors.cardDark,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
