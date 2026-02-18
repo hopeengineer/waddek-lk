@@ -13,25 +13,48 @@ class AuthRepository {
   ///
   /// Returns `true` if SMS was sent successfully.
   Future<bool> sendOtp(String phone) async {
-    final response = await _client.functions.invoke(
-      SupabaseConstants.fnSendOtp,
-      body: {'phone': phone},
-    );
+    try {
+      final response = await _client.functions.invoke(
+        SupabaseConstants.fnSendOtp,
+        body: {'phone': phone},
+      );
 
-    final data = response.data as Map<String, dynamic>;
-    return data['success'] == true;
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return data['success'] == true;
+      }
+      return false;
+    } on FunctionException catch (e) {
+      final details = e.details;
+      if (details is Map<String, dynamic> && details['error'] != null) {
+        throw Exception(details['error']);
+      }
+      throw Exception(e.reasonPhrase ?? 'Failed to send OTP');
+    }
   }
 
   /// Verify OTP code and get session tokens via `verify-otp` Edge Function.
   ///
   /// Returns the session data on success, throws on failure.
   Future<Map<String, dynamic>> verifyOtp(String phone, String code) async {
-    final response = await _client.functions.invoke(
-      SupabaseConstants.fnVerifyOtp,
-      body: {'phone': phone, 'code': code},
-    );
+    final dynamic data;
+    try {
+      final response = await _client.functions.invoke(
+        SupabaseConstants.fnVerifyOtp,
+        body: {'phone': phone, 'code': code},
+      );
+      data = response.data;
+    } on FunctionException catch (e) {
+      final details = e.details;
+      if (details is Map<String, dynamic> && details['error'] != null) {
+        throw AuthException(details['error'] as String);
+      }
+      throw AuthException(e.reasonPhrase ?? 'Verification failed');
+    }
 
-    final data = response.data as Map<String, dynamic>;
+    if (data is! Map<String, dynamic>) {
+      throw const AuthException('Unexpected response from server');
+    }
 
     if (data['error'] != null) {
       throw AuthException(data['error'] as String);
