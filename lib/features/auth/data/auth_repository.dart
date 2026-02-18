@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,7 +18,7 @@ class AuthRepository {
       body: {'phone': phone},
     );
 
-    final data = jsonDecode(response.data as String);
+    final data = response.data as Map<String, dynamic>;
     return data['success'] == true;
   }
 
@@ -31,7 +31,7 @@ class AuthRepository {
       body: {'phone': phone, 'code': code},
     );
 
-    final data = jsonDecode(response.data as String);
+    final data = response.data as Map<String, dynamic>;
 
     if (data['error'] != null) {
       throw AuthException(data['error'] as String);
