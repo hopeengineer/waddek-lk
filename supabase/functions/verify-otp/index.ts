@@ -109,39 +109,84 @@ serve(async (req: Request) => {
             .eq("id", otpRow.id);
 
         // ── Find or create Supabase Auth user ───────────────────
-        const { data: existingUsers } = await supabase.auth.admin.listUsers();
-        const existingUser = existingUsers?.users?.find(
-            (u: any) => u.phone === normalizedPhone
-        );
+        const phoneWithoutPlus = normalizedPhone.replace("+", "");
+        const fakeEmail = `phone_${phoneWithoutPlus}@waddek.lk`;
 
         let userId: string;
+        let isNewUser = false;
+
+        // Search auth users — phone might be stored with or without '+'
+        const { data: allUsers } = await supabase.auth.admin.listUsers({
+            page: 1,
+            perPage: 50,
+        });
+
+        const existingUser = allUsers?.users?.find(
+            (u: any) => u.phone === normalizedPhone ||
+                u.phone === phoneWithoutPlus ||
+                u.email === fakeEmail
+        );
 
         if (existingUser) {
             userId = existingUser.id;
         } else {
-            // Create new user with phone verified
+            // Create new user
+            isNewUser = true;
             const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
                 phone: normalizedPhone,
+                email: fakeEmail,
                 phone_confirm: true,
+                email_confirm: true,
             });
 
-            if (createError || !newUser?.user) {
-                console.error("Failed to create user:", createError);
+            if (createError) {
+                // Handle phone_exists — user exists but phone format didn't match
+                if (createError.message?.includes("phone_exists") ||
+                    createError.message?.includes("already registered")) {
+                    const { data: retryUsers } = await supabase.auth.admin.listUsers({
+                        page: 1,
+                        perPage: 200,
+                    });
+                    const retryUser = retryUsers?.users?.find(
+                        (u: any) => u.phone?.replace("+", "") === phoneWithoutPlus
+                    );
+                    if (retryUser) {
+                        userId = retryUser.id;
+                        isNewUser = false;
+                    } else {
+                        console.error("Phone exists but user not found:", createError);
+                        return new Response(
+                            JSON.stringify({ error: "Account conflict. Contact support." }),
+                            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                        );
+                    }
+                } else {
+                    console.error("Failed to create user:", createError);
+                    return new Response(
+                        JSON.stringify({ error: "Failed to create account" }),
+                        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                    );
+                }
+            } else if (newUser?.user) {
+                userId = newUser.user.id;
+            } else {
                 return new Response(
                     JSON.stringify({ error: "Failed to create account" }),
                     { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
                 );
             }
-
-            userId = newUser.user.id;
         }
 
-        // ── Generate session tokens ─────────────────────────────
-        // Use generateLink to create a session token pair
-        const fakeEmail = `phone_${normalizedPhone.replace("+", "")}@waddek.lk`;
+        // ── Generate session via magic link ──────────────────────
+        // Ensure user has the fake email for magic link generation
+        const { error: updateErr } = await supabase.auth.admin.updateUserById(userId, {
+            email: fakeEmail,
+            email_confirm: true,
+        });
 
-        // Ensure the user has this email set
-        await supabase.auth.admin.updateUser(userId, { email: fakeEmail });
+        if (updateErr) {
+            console.error("Failed to update user email:", updateErr);
+        }
 
         const { data: linkData, error: linkError } =
             await supabase.auth.admin.generateLink({
@@ -149,11 +194,54 @@ serve(async (req: Request) => {
                 email: fakeEmail,
             });
 
+        if (linkError) {
+            console.error("Failed to generate link:", linkError);
+            // Still return success — the user is verified, just can't auto-login
+            return new Response(
+                JSON.stringify({
+                    success: true,
+                    user_id: userId,
+                    phone: normalizedPhone,
+                    is_new_user: isNewUser,
+                    message: "OTP verified successfully",
+                }),
+                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
+
+        // Extract token from the action link  
+        const actionLink = linkData?.properties?.action_link ?? "";
+        const tokenHash = new URL(actionLink).searchParams.get("token") ??
+            actionLink.split("token=")[1]?.split("&")[0] ?? "";
+
+        // Verify the token to get a real session
+        const { data: sessionData, error: sessionError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "magiclink",
+        });
+
+        if (sessionError || !sessionData?.session) {
+            console.error("Failed to verify magic link:", sessionError);
+            return new Response(
+                JSON.stringify({
+                    success: true,
+                    user_id: userId,
+                    phone: normalizedPhone,
+                    is_new_user: isNewUser,
+                    message: "OTP verified successfully",
+                }),
+                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
+
         return new Response(
             JSON.stringify({
                 success: true,
                 user_id: userId,
                 phone: normalizedPhone,
+                is_new_user: isNewUser,
+                access_token: sessionData.session.access_token,
+                refresh_token: sessionData.session.refresh_token,
                 message: "OTP verified successfully",
             }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
