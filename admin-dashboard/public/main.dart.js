@@ -105769,7 +105769,7 @@ l=A.kw(k)
 l.G5(l.aCn("otp-verify",B.fi,B.hR),m,t.X)}case 1:return A.t(q,r)}})
 return A.u($async$C0,r)},
 K(a){var s,r,q=this,p=null,o=q.gee().e5($.Bu(),t.FB),n=A.bZ(20),m=A.aR_(24,B.l,0),l=A.bZ(20)
-n=A.cs(A.dc(p,A.aWc(l,new A.E8(A.bc4(p,p,new A.C_("assets/images/app_icon.png",p,p)),new A.aI_(),B.q2,p)),B.A,p,p,new A.ce(p,p,p,n,m,p,B.a7),p,80,p,p,p,p,80),p,p)
+n=A.cs(A.dc(p,A.aWc(l,new A.E8(A.bc4(p,p,new A.C_("assets/images/logo.png",p,p)),new A.aI_(),B.q2,p)),B.A,p,p,new A.ce(p,p,p,n,m,p,B.a7),p,80,p,p,p,p,80),p,p)
 m=A.cs(A.ak("Welcome to Waddek",p,p,p,A.el().$5$color$fontSize$fontWeight$height$letterSpacing(B.k,24,B.aB,1.3,p),p,p),p,p)
 l=A.cs(A.ak("Enter your phone number to get started",p,p,p,A.el().$5$color$fontSize$fontWeight$height$letterSpacing(B.k,14,B.r,1.5,p).bK(B.Z),p,p),p,p)
 s=A.el().$5$color$fontSize$fontWeight$height$letterSpacing(B.k,16,B.r,1.5,p)

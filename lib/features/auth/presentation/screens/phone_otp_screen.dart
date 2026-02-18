@@ -69,7 +69,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: Image.asset(
-                          'assets/images/app_icon.png',
+                          'assets/images/logo.png',
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             decoration: BoxDecoration(

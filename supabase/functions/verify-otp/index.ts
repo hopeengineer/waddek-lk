@@ -2,7 +2,6 @@
 // Verifies OTP code, creates/retrieves Supabase Auth user, returns session
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -13,6 +12,16 @@ const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Use Web Crypto API (works everywhere on Deno Deploy / Supabase Edge)
+async function sha256(input: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hash = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hash))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+}
 
 serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
@@ -62,7 +71,6 @@ serve(async (req: Request) => {
 
         // ── Check attempt limit ─────────────────────────────────
         if (otpRow.attempts >= MAX_VERIFY_ATTEMPTS) {
-            // Mark as used to prevent further attempts
             await supabase
                 .from("otp_codes")
                 .update({ used: true })
@@ -80,8 +88,9 @@ serve(async (req: Request) => {
             .update({ attempts: otpRow.attempts + 1 })
             .eq("id", otpRow.id);
 
-        // ── Verify code ─────────────────────────────────────────
-        const isValid = await bcrypt.compare(code, otpRow.code_hash);
+        // ── Verify code (SHA-256 comparison) ────────────────────
+        const codeHash = await sha256(code);
+        const isValid = codeHash === otpRow.code_hash;
 
         if (!isValid) {
             const attemptsLeft = MAX_VERIFY_ATTEMPTS - (otpRow.attempts + 1);
@@ -100,7 +109,6 @@ serve(async (req: Request) => {
             .eq("id", otpRow.id);
 
         // ── Find or create Supabase Auth user ───────────────────
-        // Check if user exists by phone
         const { data: existingUsers } = await supabase.auth.admin.listUsers();
         const existingUser = existingUsers?.users?.find(
             (u: any) => u.phone === normalizedPhone
@@ -128,32 +136,24 @@ serve(async (req: Request) => {
             userId = newUser.user.id;
         }
 
-        // ── Generate session tokens via magic link workaround ────
-        // Use admin.generateLink to create a session
+        // ── Generate session tokens ─────────────────────────────
+        // Use generateLink to create a session token pair
+        const fakeEmail = `phone_${normalizedPhone.replace("+", "")}@waddek.lk`;
+
+        // Ensure the user has this email set
+        await supabase.auth.admin.updateUser(userId, { email: fakeEmail });
+
         const { data: linkData, error: linkError } =
             await supabase.auth.admin.generateLink({
                 type: "magiclink",
-                email: `${normalizedPhone.replace("+", "")}@phone.waddek.lk`,
+                email: fakeEmail,
             });
-
-        // Alternative: use signInWithPassword with a generated password
-        // For now, return user info and let the client handle session
-        // via supabase.auth.setSession()
-
-        // Generate a fresh session by signing in on behalf of user
-        // Using the admin API to create a session directly
-        const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-            type: "magiclink",
-            email: `phone_${normalizedPhone.replace("+", "")}@waddek.lk`,
-        });
 
         return new Response(
             JSON.stringify({
                 success: true,
                 user_id: userId,
                 phone: normalizedPhone,
-                // The client should call supabase.auth.setSession() with these
-                // In production, consider using a custom JWT or the admin.createSession() API
                 message: "OTP verified successfully",
             }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

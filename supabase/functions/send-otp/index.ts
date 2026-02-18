@@ -1,8 +1,7 @@
 // supabase/functions/send-otp/index.ts
-// Generates a 6-digit OTP, stores bcrypt hash in DB, sends SMS via Notify.lk
+// Generates a 6-digit OTP, stores SHA-256 hash in DB, sends SMS via Notify.lk
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -10,15 +9,25 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Notify.lk credentials
 const NOTIFY_USER_ID = Deno.env.get("NOTIFY_USER_ID") ?? "31034";
 const NOTIFY_API_KEY = Deno.env.get("NOTIFY_API_KEY") ?? "HkubYfywhy71W4hpm0em";
-const NOTIFY_SENDER_ID = Deno.env.get("NOTIFY_SENDER_ID") ?? "NotifyDEMO"; // Apply for branded sender
+const NOTIFY_SENDER_ID = Deno.env.get("NOTIFY_SENDER_ID") ?? "NotifyDEMO";
 
 const OTP_EXPIRY_MINUTES = 5;
-const MAX_OTPS_PER_HOUR = 3;
+const MAX_OTPS_PER_HOUR = 5;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Use Web Crypto API (works everywhere on Deno Deploy / Supabase Edge)
+async function sha256(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 serve(async (req: Request) => {
   // Handle CORS preflight
@@ -64,7 +73,7 @@ serve(async (req: Request) => {
 
     // ── Generate OTP ────────────────────────────────────────
     const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
-    const codeHash = await bcrypt.hash(code);
+    const codeHash = await sha256(code);
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
     // ── Store in DB ─────────────────────────────────────────
@@ -104,7 +113,6 @@ serve(async (req: Request) => {
     if (smsResult.status !== "success" && smsResult.status !== 200) {
       console.error("Notify.lk error:", smsResult);
       // Don't fail — OTP is stored, SMS delivery is best-effort
-      // The user can request a resend
     }
 
     return new Response(
