@@ -92,10 +92,10 @@ serve(async (req: Request) => {
     }
 
     // ── Send SMS via Notify.lk ──────────────────────────────
-    // Notify.lk expects local format (07xxxxxxxx)
+    // Notify.lk expects 11-digit format: 94XXXXXXXXX (no + prefix)
     let smsPhone = normalizedPhone;
-    if (smsPhone.startsWith("+94")) {
-      smsPhone = "0" + smsPhone.substring(3);
+    if (smsPhone.startsWith("+")) {
+      smsPhone = smsPhone.substring(1); // Remove + to get 94XXXXXXXXX
     }
 
     const message = `Your Waddek verification code is ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes.`;
@@ -112,7 +112,10 @@ serve(async (req: Request) => {
 
     if (smsResult.status !== "success" && smsResult.status !== 200) {
       console.error("Notify.lk error:", smsResult);
-      // Don't fail — OTP is stored, SMS delivery is best-effort
+      return new Response(
+        JSON.stringify({ success: false, error: "Failed to send SMS. Please try again." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(
