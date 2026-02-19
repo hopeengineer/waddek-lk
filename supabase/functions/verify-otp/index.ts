@@ -29,7 +29,7 @@ serve(async (req: Request) => {
     }
 
     try {
-        const { phone, code } = await req.json();
+        const { phone, code, context } = await req.json();
 
         if (!phone || !code) {
             return new Response(
@@ -115,65 +115,85 @@ serve(async (req: Request) => {
         let userId: string;
         let isNewUser = false;
 
-        // Search auth users — phone might be stored with or without '+'
-        const { data: allUsers } = await supabase.auth.admin.listUsers({
-            page: 1,
-            perPage: 50,
-        });
-
-        const existingUser = allUsers?.users?.find(
-            (u: any) => u.phone === normalizedPhone ||
-                u.phone === phoneWithoutPlus ||
-                u.email === fakeEmail
-        );
-
-        if (existingUser) {
-            userId = existingUser.id;
-        } else {
-            // Create new user
-            isNewUser = true;
-            const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-                phone: normalizedPhone,
-                email: fakeEmail,
-                phone_confirm: true,
-                email_confirm: true,
+        if (context === "login_2fa") {
+            // ── Login 2FA: user must already exist ─────────────────
+            const { data: allUsers } = await supabase.auth.admin.listUsers({
+                page: 1,
+                perPage: 50,
             });
 
-            if (createError) {
-                // Handle phone_exists — user exists but phone format didn't match
-                if (createError.message?.includes("phone_exists") ||
-                    createError.message?.includes("already registered")) {
-                    const { data: retryUsers } = await supabase.auth.admin.listUsers({
-                        page: 1,
-                        perPage: 200,
-                    });
-                    const retryUser = retryUsers?.users?.find(
-                        (u: any) => u.phone?.replace("+", "") === phoneWithoutPlus
-                    );
-                    if (retryUser) {
-                        userId = retryUser.id;
-                        isNewUser = false;
+            const existingUser = allUsers?.users?.find(
+                (u: any) => u.phone === normalizedPhone ||
+                    u.phone === phoneWithoutPlus ||
+                    u.email === fakeEmail
+            );
+
+            if (!existingUser) {
+                return new Response(
+                    JSON.stringify({ error: "No account found. Please sign up first." }),
+                    { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+            }
+            userId = existingUser.id;
+        } else {
+            // ── Signup: find or create user ─────────────────────────
+            const { data: allUsers } = await supabase.auth.admin.listUsers({
+                page: 1,
+                perPage: 50,
+            });
+
+            const existingUser = allUsers?.users?.find(
+                (u: any) => u.phone === normalizedPhone ||
+                    u.phone === phoneWithoutPlus ||
+                    u.email === fakeEmail
+            );
+
+            if (existingUser) {
+                userId = existingUser.id;
+            } else {
+                isNewUser = true;
+                const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+                    phone: normalizedPhone,
+                    email: fakeEmail,
+                    phone_confirm: true,
+                    email_confirm: true,
+                });
+
+                if (createError) {
+                    if (createError.message?.includes("phone_exists") ||
+                        createError.message?.includes("already registered")) {
+                        const { data: retryUsers } = await supabase.auth.admin.listUsers({
+                            page: 1,
+                            perPage: 200,
+                        });
+                        const retryUser = retryUsers?.users?.find(
+                            (u: any) => u.phone?.replace("+", "") === phoneWithoutPlus
+                        );
+                        if (retryUser) {
+                            userId = retryUser.id;
+                            isNewUser = false;
+                        } else {
+                            console.error("Phone exists but user not found:", createError);
+                            return new Response(
+                                JSON.stringify({ error: "Account conflict. Contact support." }),
+                                { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                            );
+                        }
                     } else {
-                        console.error("Phone exists but user not found:", createError);
+                        console.error("Failed to create user:", createError);
                         return new Response(
-                            JSON.stringify({ error: "Account conflict. Contact support." }),
+                            JSON.stringify({ error: "Failed to create account" }),
                             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
                         );
                     }
+                } else if (newUser?.user) {
+                    userId = newUser.user.id;
                 } else {
-                    console.error("Failed to create user:", createError);
                     return new Response(
                         JSON.stringify({ error: "Failed to create account" }),
                         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
                     );
                 }
-            } else if (newUser?.user) {
-                userId = newUser.user.id;
-            } else {
-                return new Response(
-                    JSON.stringify({ error: "Failed to create account" }),
-                    { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-                );
             }
         }
 

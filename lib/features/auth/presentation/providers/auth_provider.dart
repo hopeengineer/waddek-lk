@@ -8,8 +8,19 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
 });
 
-/// Auth state notifier — manages OTP flow state.
-enum AuthFlowState { idle, sendingOtp, otpSent, verifying, verified, error }
+/// Auth state notifier — manages OTP, login, and registration flow state.
+enum AuthFlowState {
+  idle,
+  sendingOtp,
+  otpSent,
+  verifying,
+  verified,
+  loggingIn,
+  awaiting2fa,
+  registering,
+  registered,
+  error,
+}
 
 class AuthState {
   const AuthState({
@@ -44,7 +55,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   final AuthRepository _repo;
 
-  /// Send OTP to phone number.
+  /// Send OTP to phone number (signup only).
   Future<void> sendOtp(String phone) async {
     state = state.copyWith(
       flowState: AuthFlowState.sendingOtp,
@@ -53,7 +64,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
 
     try {
-      final success = await _repo.sendOtp(phone);
+      final success = await _repo.sendOtp(phone, context: 'signup');
       if (success) {
         state = state.copyWith(
           flowState: AuthFlowState.otpSent,
@@ -75,7 +86,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Verify OTP code.
+  /// Verify OTP code (signup context).
   Future<bool> verifyOtp(String code) async {
     state = state.copyWith(
       flowState: AuthFlowState.verifying,
@@ -83,7 +94,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
 
     try {
-      await _repo.verifyOtp(state.phone, code);
+      await _repo.verifyOtp(state.phone, code, context: 'signup');
       state = state.copyWith(
         flowState: AuthFlowState.verified,
         isLoading: false,
@@ -103,6 +114,105 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
       return false;
+    }
+  }
+
+  /// Verify OTP code for 2FA login.
+  Future<bool> verify2fa(String code) async {
+    state = state.copyWith(
+      flowState: AuthFlowState.verifying,
+      isLoading: true,
+    );
+
+    try {
+      await _repo.verifyOtp(state.phone, code, context: 'login_2fa');
+      state = state.copyWith(
+        flowState: AuthFlowState.verified,
+        isLoading: false,
+      );
+      return true;
+    } on AuthException catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: e.message,
+        isLoading: false,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: 'Verification failed. Please try again.',
+        isLoading: false,
+      );
+      return false;
+    }
+  }
+
+  /// Log in with phone/email + password.
+  Future<void> login(String identifier, String password) async {
+    state = state.copyWith(
+      flowState: AuthFlowState.loggingIn,
+      isLoading: true,
+    );
+
+    try {
+      final result = await _repo.login(identifier, password);
+      final phone = result['phone'] as String? ?? identifier;
+      state = state.copyWith(
+        flowState: AuthFlowState.awaiting2fa,
+        phone: phone,
+        isLoading: false,
+      );
+    } on AuthException catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: e.message,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: 'Login failed. Please try again.',
+        isLoading: false,
+      );
+    }
+  }
+
+  /// Register new user with profile data.
+  Future<void> register({
+    required String phone,
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(
+      flowState: AuthFlowState.registering,
+      isLoading: true,
+    );
+
+    try {
+      await _repo.register(
+        phone: phone,
+        fullName: fullName,
+        email: email,
+        password: password,
+      );
+      state = state.copyWith(
+        flowState: AuthFlowState.registered,
+        isLoading: false,
+      );
+    } on AuthException catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: e.message,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: 'Registration failed. Please try again.',
+        isLoading: false,
+      );
     }
   }
 

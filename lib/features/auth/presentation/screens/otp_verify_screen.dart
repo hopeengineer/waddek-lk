@@ -12,9 +12,15 @@ import '../../../../core/widgets/neon_button.dart';
 import '../providers/auth_provider.dart';
 
 /// OTP verification screen — user enters the 6-digit code sent to their phone.
+/// [context] determines the flow: 'signup' or 'login_2fa'.
 class OtpVerifyScreen extends ConsumerStatefulWidget {
-  const OtpVerifyScreen({super.key, required this.phone});
+  const OtpVerifyScreen({
+    super.key,
+    required this.phone,
+    this.otpContext = 'signup',
+  });
   final String phone;
+  final String otpContext;
 
   @override
   ConsumerState<OtpVerifyScreen> createState() => _OtpVerifyScreenState();
@@ -71,14 +77,18 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     final code = _otpCode;
     if (code.length != 6) return;
 
-    final success = await ref.read(authProvider.notifier).verifyOtp(code);
-    if (success && mounted) {
-      final needsOnboarding =
-          await ref.read(authProvider.notifier).needsOnboarding();
-      if (needsOnboarding) {
-        context.goNamed('role-selection');
-      } else {
+    bool success;
+    if (widget.otpContext == 'login_2fa') {
+      // 2FA login: verify and go home
+      success = await ref.read(authProvider.notifier).verify2fa(code);
+      if (success && mounted) {
         context.go('/');
+      }
+    } else {
+      // Signup: verify and go to registration form
+      success = await ref.read(authProvider.notifier).verifyOtp(code);
+      if (success && mounted) {
+        context.goNamed('register', extra: widget.phone);
       }
     }
   }

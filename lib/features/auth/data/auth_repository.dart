@@ -1,9 +1,9 @@
 
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:waddek_lk/core/constants/supabase_constants.dart';
 import 'package:waddek_lk/core/services/supabase_service.dart';
+import 'package:waddek_lk/core/utils/validators.dart';
 
 /// Handles authentication via custom OTP flow (Notify.lk) and Supabase Auth.
 class AuthRepository {
@@ -11,12 +11,13 @@ class AuthRepository {
 
   /// Send OTP to the given phone number via the `send-otp` Edge Function.
   ///
+  /// [context] can be `"signup"` (default) or `"login_2fa"`.
   /// Returns `true` if SMS was sent successfully.
-  Future<bool> sendOtp(String phone) async {
+  Future<bool> sendOtp(String phone, {String context = 'signup'}) async {
     try {
       final response = await _client.functions.invoke(
         SupabaseConstants.fnSendOtp,
-        body: {'phone': phone},
+        body: {'phone': phone, 'context': context},
       );
 
       final data = response.data;
@@ -35,13 +36,15 @@ class AuthRepository {
 
   /// Verify OTP code and get session tokens via `verify-otp` Edge Function.
   ///
+  /// [context] can be `"signup"` (default) or `"login_2fa"`.
   /// Returns the session data on success, throws on failure.
-  Future<Map<String, dynamic>> verifyOtp(String phone, String code) async {
+  Future<Map<String, dynamic>> verifyOtp(String phone, String code,
+      {String context = 'signup'}) async {
     final dynamic data;
     try {
       final response = await _client.functions.invoke(
         SupabaseConstants.fnVerifyOtp,
-        body: {'phone': phone, 'code': code},
+        body: {'phone': phone, 'code': code, 'context': context},
       );
       data = response.data;
     } on FunctionException catch (e) {
@@ -90,7 +93,64 @@ class AuthRepository {
     await _client.from(SupabaseConstants.profiles).upsert({
       'id': userId,
       'role': role,
+      'active_role': role,
       'phone': _client.auth.currentUser?.phone ?? '',
+    });
+  }
+
+  /// Log in with phone/email + password via `login` Edge Function.
+  /// Returns the response data (includes `requires_2fa`, `phone`, `user_id`).
+  Future<Map<String, dynamic>> login(
+      String identifier, String password) async {
+    try {
+      final response = await _client.functions.invoke(
+        'login',
+        body: {'identifier': identifier, 'password': password},
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        if (data['error'] != null) {
+          throw AuthException(data['error'] as String);
+        }
+        return data;
+      }
+      throw const AuthException('Unexpected response from server');
+    } on FunctionException catch (e) {
+      final details = e.details;
+      if (details is Map<String, dynamic> && details['error'] != null) {
+        throw AuthException(details['error'] as String);
+      }
+      throw AuthException(e.reasonPhrase ?? 'Login failed');
+    }
+  }
+
+  /// Register a new user: update Auth user with email/password, create profile.
+  Future<void> register({
+    required String phone,
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) throw const AuthException('Not authenticated');
+
+    // Update Supabase Auth user with real email and password
+    await _client.auth.updateUser(
+      UserAttributes(
+        email: email,
+        password: password,
+        data: {'full_name': fullName},
+      ),
+    );
+
+    // Update the profile with registration info
+    await _client.from(SupabaseConstants.profiles).upsert({
+      'id': userId,
+      'phone': Validators.normalizePhone(phone),
+      'email': email,
+      'full_name': fullName,
+      'registration_completed': true,
     });
   }
 

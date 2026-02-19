@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/phone_otp_screen.dart';
 import '../../features/auth/presentation/screens/otp_verify_screen.dart';
+import '../../features/auth/presentation/screens/registration_screen.dart';
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
 import '../../features/profile/presentation/screens/customer_profile_screen.dart';
 import '../../features/profile/presentation/screens/worker_profile_screen.dart';
@@ -32,9 +34,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final session = SupabaseService.client.auth.currentSession;
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
 
-      // Not logged in → go to OTP screen
+      // Not logged in → go to login screen
       if (session == null && !isAuthRoute) {
-        return '/auth/phone';
+        return '/auth/login';
       }
 
       // Logged in but on auth screen → go home
@@ -47,6 +49,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       // ── Auth Routes ─────────────────────────────────────
       GoRoute(
+        path: '/auth/login',
+        name: 'login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
         path: '/auth/phone',
         name: 'phone-otp',
         builder: (context, state) => const PhoneOtpScreen(),
@@ -56,7 +63,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'otp-verify',
         builder: (context, state) {
           final phone = state.extra as String? ?? '';
-          return OtpVerifyScreen(phone: phone);
+          return OtpVerifyScreen(phone: phone, otpContext: 'signup');
+        },
+      ),
+      GoRoute(
+        path: '/auth/verify-2fa',
+        name: 'otp-verify-2fa',
+        builder: (context, state) {
+          final phone = state.extra as String? ?? '';
+          return OtpVerifyScreen(phone: phone, otpContext: 'login_2fa');
+        },
+      ),
+      GoRoute(
+        path: '/auth/register',
+        name: 'register',
+        builder: (context, state) {
+          final phone = state.extra as String? ?? '';
+          return RegistrationScreen(phone: phone);
         },
       ),
       GoRoute(

@@ -36,7 +36,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { phone } = await req.json();
+    const { phone, context } = await req.json();
     if (!phone || typeof phone !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "Phone number is required" }),
@@ -55,6 +55,41 @@ serve(async (req: Request) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ── Context-based checks ──────────────────────────────────
+    if (context === "signup") {
+      // For signup: ensure phone is NOT already registered
+      const phoneWithoutPlus = normalizedPhone.replace("+", "");
+      const { data: allUsers } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 50,
+      });
+      const existing = allUsers?.users?.find(
+        (u: any) => u.phone === normalizedPhone || u.phone === phoneWithoutPlus
+      );
+      if (existing) {
+        return new Response(
+          JSON.stringify({ success: false, error: "This phone number is already registered. Please log in instead." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else if (context === "login_2fa") {
+      // For 2FA login: ensure phone IS registered
+      const phoneWithoutPlus = normalizedPhone.replace("+", "");
+      const { data: allUsers } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 50,
+      });
+      const existing = allUsers?.users?.find(
+        (u: any) => u.phone === normalizedPhone || u.phone === phoneWithoutPlus
+      );
+      if (!existing) {
+        return new Response(
+          JSON.stringify({ success: false, error: "No account found with this phone number." }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     // ── Rate limit check ────────────────────────────────────
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
