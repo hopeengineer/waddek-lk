@@ -98,6 +98,16 @@ class ProfileRepository {
     return ProfileModel.fromJson(data);
   }
 
+  /// Update the user's active role (customer or worker).
+  Future<void> updateActiveRole(String role) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client
+        .from(SupabaseConstants.profiles)
+        .update({'active_role': role})
+        .eq('id', userId);
+  }
+
   /// Update profile with location (PostGIS point).
   Future<ProfileModel> updateLocation({
     required String userId,

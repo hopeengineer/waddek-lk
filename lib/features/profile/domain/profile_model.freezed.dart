@@ -19,6 +19,10 @@ mixin _$ProfileModel {
   String get id => throw _privateConstructorUsedError;
   String get phone => throw _privateConstructorUsedError;
   String get role => throw _privateConstructorUsedError;
+  @JsonKey(name: 'active_role')
+  String get activeRole => throw _privateConstructorUsedError;
+  @JsonKey(name: 'registration_completed')
+  bool get registrationCompleted => throw _privateConstructorUsedError;
   String get tier => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
   @JsonKey(name: 'full_name')
@@ -71,6 +75,8 @@ abstract class $ProfileModelCopyWith<$Res> {
       {String id,
       String phone,
       String role,
+      @JsonKey(name: 'active_role') String activeRole,
+      @JsonKey(name: 'registration_completed') bool registrationCompleted,
       String tier,
       String? email,
       @JsonKey(name: 'full_name') String? fullName,
@@ -110,6 +116,8 @@ class _$ProfileModelCopyWithImpl<$Res, $Val extends ProfileModel>
     Object? id = null,
     Object? phone = null,
     Object? role = null,
+    Object? activeRole = null,
+    Object? registrationCompleted = null,
     Object? tier = null,
     Object? email = freezed,
     Object? fullName = freezed,
@@ -143,6 +151,14 @@ class _$ProfileModelCopyWithImpl<$Res, $Val extends ProfileModel>
           ? _value.role
           : role // ignore: cast_nullable_to_non_nullable
               as String,
+      activeRole: null == activeRole
+          ? _value.activeRole
+          : activeRole // ignore: cast_nullable_to_non_nullable
+              as String,
+      registrationCompleted: null == registrationCompleted
+          ? _value.registrationCompleted
+          : registrationCompleted // ignore: cast_nullable_to_non_nullable
+              as bool,
       tier: null == tier
           ? _value.tier
           : tier // ignore: cast_nullable_to_non_nullable
@@ -235,6 +251,8 @@ abstract class _$$ProfileModelImplCopyWith<$Res>
       {String id,
       String phone,
       String role,
+      @JsonKey(name: 'active_role') String activeRole,
+      @JsonKey(name: 'registration_completed') bool registrationCompleted,
       String tier,
       String? email,
       @JsonKey(name: 'full_name') String? fullName,
@@ -272,6 +290,8 @@ class __$$ProfileModelImplCopyWithImpl<$Res>
     Object? id = null,
     Object? phone = null,
     Object? role = null,
+    Object? activeRole = null,
+    Object? registrationCompleted = null,
     Object? tier = null,
     Object? email = freezed,
     Object? fullName = freezed,
@@ -305,6 +325,14 @@ class __$$ProfileModelImplCopyWithImpl<$Res>
           ? _value.role
           : role // ignore: cast_nullable_to_non_nullable
               as String,
+      activeRole: null == activeRole
+          ? _value.activeRole
+          : activeRole // ignore: cast_nullable_to_non_nullable
+              as String,
+      registrationCompleted: null == registrationCompleted
+          ? _value.registrationCompleted
+          : registrationCompleted // ignore: cast_nullable_to_non_nullable
+              as bool,
       tier: null == tier
           ? _value.tier
           : tier // ignore: cast_nullable_to_non_nullable
@@ -392,6 +420,9 @@ class _$ProfileModelImpl implements _ProfileModel {
       {required this.id,
       required this.phone,
       this.role = 'customer',
+      @JsonKey(name: 'active_role') this.activeRole = 'customer',
+      @JsonKey(name: 'registration_completed')
+      this.registrationCompleted = false,
       this.tier = 'waddek',
       this.email,
       @JsonKey(name: 'full_name') this.fullName,
@@ -420,6 +451,12 @@ class _$ProfileModelImpl implements _ProfileModel {
   @override
   @JsonKey()
   final String role;
+  @override
+  @JsonKey(name: 'active_role')
+  final String activeRole;
+  @override
+  @JsonKey(name: 'registration_completed')
+  final bool registrationCompleted;
   @override
   @JsonKey()
   final String tier;
@@ -477,7 +514,7 @@ class _$ProfileModelImpl implements _ProfileModel {
 
   @override
   String toString() {
-    return 'ProfileModel(id: $id, phone: $phone, role: $role, tier: $tier, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, bio: $bio, isOnline: $isOnline, averageRating: $averageRating, jobsCompletedCount: $jobsCompletedCount, verificationStatus: $verificationStatus, nicFrontUrl: $nicFrontUrl, nicBackUrl: $nicBackUrl, nicNumber: $nicNumber, fcmToken: $fcmToken, preferredLocale: $preferredLocale, addressText: $addressText, latitude: $latitude, longitude: $longitude, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'ProfileModel(id: $id, phone: $phone, role: $role, activeRole: $activeRole, registrationCompleted: $registrationCompleted, tier: $tier, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, bio: $bio, isOnline: $isOnline, averageRating: $averageRating, jobsCompletedCount: $jobsCompletedCount, verificationStatus: $verificationStatus, nicFrontUrl: $nicFrontUrl, nicBackUrl: $nicBackUrl, nicNumber: $nicNumber, fcmToken: $fcmToken, preferredLocale: $preferredLocale, addressText: $addressText, latitude: $latitude, longitude: $longitude, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -488,6 +525,10 @@ class _$ProfileModelImpl implements _ProfileModel {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.role, role) || other.role == role) &&
+            (identical(other.activeRole, activeRole) ||
+                other.activeRole == activeRole) &&
+            (identical(other.registrationCompleted, registrationCompleted) ||
+                other.registrationCompleted == registrationCompleted) &&
             (identical(other.tier, tier) || other.tier == tier) &&
             (identical(other.email, email) || other.email == email) &&
             (identical(other.fullName, fullName) ||
@@ -531,6 +572,8 @@ class _$ProfileModelImpl implements _ProfileModel {
         id,
         phone,
         role,
+        activeRole,
+        registrationCompleted,
         tier,
         email,
         fullName,
@@ -563,29 +606,31 @@ class _$ProfileModelImpl implements _ProfileModel {
 
 abstract class _ProfileModel implements ProfileModel {
   const factory _ProfileModel(
-          {required final String id,
-          required final String phone,
-          final String role,
-          final String tier,
-          final String? email,
-          @JsonKey(name: 'full_name') final String? fullName,
-          @JsonKey(name: 'avatar_url') final String? avatarUrl,
-          final String? bio,
-          @JsonKey(name: 'is_online') final bool isOnline,
-          @JsonKey(name: 'average_rating') final double averageRating,
-          @JsonKey(name: 'jobs_completed_count') final int jobsCompletedCount,
-          @JsonKey(name: 'verification_status') final String verificationStatus,
-          @JsonKey(name: 'nic_front_url') final String? nicFrontUrl,
-          @JsonKey(name: 'nic_back_url') final String? nicBackUrl,
-          @JsonKey(name: 'nic_number') final String? nicNumber,
-          @JsonKey(name: 'fcm_token') final String? fcmToken,
-          @JsonKey(name: 'preferred_locale') final String preferredLocale,
-          @JsonKey(name: 'address_text') final String? addressText,
-          final double? latitude,
-          final double? longitude,
-          @JsonKey(name: 'created_at') final DateTime? createdAt,
-          @JsonKey(name: 'updated_at') final DateTime? updatedAt}) =
-      _$ProfileModelImpl;
+      {required final String id,
+      required final String phone,
+      final String role,
+      @JsonKey(name: 'active_role') final String activeRole,
+      @JsonKey(name: 'registration_completed') final bool registrationCompleted,
+      final String tier,
+      final String? email,
+      @JsonKey(name: 'full_name') final String? fullName,
+      @JsonKey(name: 'avatar_url') final String? avatarUrl,
+      final String? bio,
+      @JsonKey(name: 'is_online') final bool isOnline,
+      @JsonKey(name: 'average_rating') final double averageRating,
+      @JsonKey(name: 'jobs_completed_count') final int jobsCompletedCount,
+      @JsonKey(name: 'verification_status') final String verificationStatus,
+      @JsonKey(name: 'nic_front_url') final String? nicFrontUrl,
+      @JsonKey(name: 'nic_back_url') final String? nicBackUrl,
+      @JsonKey(name: 'nic_number') final String? nicNumber,
+      @JsonKey(name: 'fcm_token') final String? fcmToken,
+      @JsonKey(name: 'preferred_locale') final String preferredLocale,
+      @JsonKey(name: 'address_text') final String? addressText,
+      final double? latitude,
+      final double? longitude,
+      @JsonKey(name: 'created_at') final DateTime? createdAt,
+      @JsonKey(name: 'updated_at')
+      final DateTime? updatedAt}) = _$ProfileModelImpl;
 
   @override
   String get id;
@@ -593,6 +638,12 @@ abstract class _ProfileModel implements ProfileModel {
   String get phone;
   @override
   String get role;
+  @override
+  @JsonKey(name: 'active_role')
+  String get activeRole;
+  @override
+  @JsonKey(name: 'registration_completed')
+  bool get registrationCompleted;
   @override
   String get tier;
   @override

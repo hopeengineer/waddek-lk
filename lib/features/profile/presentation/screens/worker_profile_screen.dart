@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:waddek_lk/core/providers/role_provider.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
@@ -68,6 +71,11 @@ class WorkerProfileScreen extends ConsumerWidget {
                         _actionTile(Icons.photo_library, 'Portfolio', () {}),
                         _actionTile(Icons.category, 'My Skills', () {}),
                         _actionTile(Icons.location_on, 'Update Location', () {}),
+                        const Divider(color: AppColors.bgSurface, height: 16),
+                        _actionTile(Icons.swap_horiz, 'Switch to Customer Mode', () {
+                          ref.read(activeRoleProvider.notifier).switchRole('customer');
+                          context.go('/customer/home');
+                        }),
                       ],
                     ),
                   ),
