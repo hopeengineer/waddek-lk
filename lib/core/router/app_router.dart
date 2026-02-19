@@ -7,12 +7,14 @@ import '../../features/auth/presentation/screens/phone_otp_screen.dart';
 import '../../features/auth/presentation/screens/otp_verify_screen.dart';
 import '../../features/auth/presentation/screens/registration_screen.dart';
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
+import '../../features/home/presentation/screens/customer_home_screen.dart';
 import '../../features/profile/presentation/screens/customer_profile_screen.dart';
 import '../../features/profile/presentation/screens/worker_profile_screen.dart';
 import '../../features/profile/presentation/screens/worker_onboarding_screen.dart';
 import '../../features/jobs/presentation/screens/create_job_screen.dart';
 import '../../features/jobs/presentation/screens/my_jobs_screen.dart';
 import '../../features/jobs/presentation/screens/job_detail_screen.dart';
+import '../../features/jobs/presentation/screens/worker_bids_screen.dart';
 import '../services/supabase_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
@@ -109,7 +111,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/customer/home',
             name: 'customer-home-tab',
             builder: (context, state) =>
-                const _PlaceholderScreen(title: 'Home'),
+                const CustomerHomeScreen(),
           ),
           GoRoute(
             path: '/customer/jobs',
@@ -143,7 +145,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/worker/bids',
             name: 'worker-bids',
             builder: (context, state) =>
-                const _PlaceholderScreen(title: 'My Bids'),
+                const WorkerBidsScreen(),
           ),
           GoRoute(
             path: '/wallet',
@@ -222,22 +224,3 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-
-/// Temporary placeholder used until feature screens are built.
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Text(
-          title,
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-      ),
-    );
-  }
-}
