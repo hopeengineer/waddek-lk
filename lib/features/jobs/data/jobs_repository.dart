@@ -34,19 +34,26 @@ class JobsRepository {
     return data.map<JobModel>((j) => JobModel.fromJson(j)).toList();
   }
 
-  /// Fetch available jobs for a worker (broadcast/bidding status, in their categories).
+  /// Fetch available jobs for a worker (broadcast/bidding status, in
+  /// their categories). Uses a SECURITY DEFINER RPC so the customer's
+  /// public profile fields come through even though the worker isn't
+  /// yet a counterparty under the tightened profiles RLS.
   Future<List<JobModel>> getAvailableJobs({
     required String workerId,
     required List<String> categoryIds,
   }) async {
     if (categoryIds.isEmpty) return [];
-    final data = await _client
-        .from(SupabaseConstants.jobs)
-        .select('*, customer:profiles!customer_id(id, full_name, avatar_url), category:categories!category_id(id, name_en, name_si, name_ta, icon)')
-        .inFilter('category_id', categoryIds)
-        .inFilter('status', ['broadcast', 'bidding'])
-        .order('created_at', ascending: false);
-    return data.map<JobModel>((j) => JobModel.fromJson(j)).toList();
+    final data = await _client.rpc(
+      'get_available_jobs_for_worker',
+      params: {
+        'p_worker_id': workerId,
+        'p_category_ids': categoryIds,
+      },
+    );
+    return (data as List)
+        .map<JobModel>(
+            (row) => JobModel.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
   }
 
   /// Fetch jobs where a worker has been matched.
@@ -156,13 +163,18 @@ class JobsRepository {
   // ── Bids — Read ──────────────────────────────────────────
 
   /// Fetch bids for a job (customer view — includes worker info).
+  /// Goes through a SECURITY DEFINER RPC so worker public fields show
+  /// up before the bid is matched (the counterparty RLS policy would
+  /// otherwise hide bidder profiles).
   Future<List<BidModel>> getBidsForJob(String jobId) async {
-    final data = await _client
-        .from(SupabaseConstants.bids)
-        .select('*, worker:profiles!worker_id(id, full_name, avatar_url, tier, average_rating, jobs_completed_count, verification_status)')
-        .eq('job_id', jobId)
-        .order('created_at', ascending: false);
-    return data.map<BidModel>((b) => BidModel.fromJson(b)).toList();
+    final data = await _client.rpc(
+      'get_job_bids_with_workers',
+      params: {'p_job_id': jobId},
+    );
+    return (data as List)
+        .map<BidModel>(
+            (row) => BidModel.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList();
   }
 
   /// Fetch bids placed by a worker (worker view).

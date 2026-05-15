@@ -33,22 +33,20 @@ class ReviewsRepository {
     return ReviewModel.fromJson(data);
   }
 
-  /// Fetch reviews for a worker.
+  /// Fetch reviews for a worker. Uses a SECURITY DEFINER RPC so the
+  /// reviewer's public fields are returned even when the viewing user
+  /// isn't a counterparty of that reviewer. Also bridges the schema
+  /// mismatch (DB columns reviewer_id/reviewee_id ↔ model's
+  /// customer_id/worker_id).
   Future<List<ReviewModel>> getWorkerReviews(String workerId,
       {int limit = 20}) async {
-    final data = await _client
-        .from(SupabaseConstants.reviews)
-        .select('''
-          *,
-          customer:profiles!customer_id(full_name, avatar_url),
-          job:jobs!job_id(title, category_id)
-        ''')
-        .eq('worker_id', workerId)
-        .order('created_at', ascending: false)
-        .limit(limit);
-
-    return data
-        .map<ReviewModel>((r) => ReviewModel.fromJson(r))
+    final data = await _client.rpc(
+      'get_worker_reviews_with_authors',
+      params: {'p_worker_id': workerId, 'p_limit': limit},
+    );
+    return (data as List)
+        .map<ReviewModel>(
+            (row) => ReviewModel.fromJson(Map<String, dynamic>.from(row as Map)))
         .toList();
   }
 

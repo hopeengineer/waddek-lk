@@ -13,17 +13,28 @@ class ProfileRepository {
 
   // ── Read ──────────────────────────────────────────────────
 
-  /// Fetch the current user's profile.
+  /// Fetch the current user's profile. Reads from `profiles` directly
+  /// because the owner-only RLS policy lets the user see their own
+  /// private fields (phone, email, NIC).
   Future<ProfileModel?> getCurrentProfile() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return null;
-    return getProfile(userId);
-  }
-
-  /// Fetch a profile by user ID.
-  Future<ProfileModel?> getProfile(String userId) async {
     final data = await _client
         .from(SupabaseConstants.profiles)
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
+    if (data == null) return null;
+    return ProfileModel.fromJson(data);
+  }
+
+  /// Fetch a profile by user ID for cross-user reads (worker detail,
+  /// search result tap, etc). Goes through the `public_profiles` view
+  /// which is `security_invoker = off`, so it bypasses the profiles
+  /// RLS while exposing only the safe columns.
+  Future<ProfileModel?> getProfile(String userId) async {
+    final data = await _client
+        .from('public_profiles')
         .select()
         .eq('id', userId)
         .maybeSingle();
