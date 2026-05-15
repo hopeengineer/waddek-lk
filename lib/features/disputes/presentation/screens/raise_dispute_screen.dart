@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
@@ -20,6 +21,7 @@ class RaiseDisputeScreen extends ConsumerStatefulWidget {
 class _RaiseDisputeScreenState extends ConsumerState<RaiseDisputeScreen> {
   String? _selectedReason;
   final _descController = TextEditingController();
+  final List<XFile> _evidence = [];
   bool _submitting = false;
 
   static const _reasons = [
@@ -121,16 +123,18 @@ class _RaiseDisputeScreenState extends ConsumerState<RaiseDisputeScreen> {
               child: ListTile(
                 leading: const Icon(Icons.add_a_photo,
                     color: AppColors.neonCyan),
-                title: const Text('Add Evidence (Optional)',
-                    style: TextStyle(color: AppColors.textPrimary)),
+                title: Text(
+                  _evidence.isEmpty
+                      ? 'Add Evidence (Optional)'
+                      : '${_evidence.length} photo${_evidence.length == 1 ? '' : 's'} attached',
+                  style: const TextStyle(color: AppColors.textPrimary),
+                ),
                 subtitle: const Text('Photos help us investigate faster',
                     style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 11)),
+                        color: AppColors.textSecondary, fontSize: 12)),
                 trailing: const Icon(Icons.chevron_right,
                     color: AppColors.textSecondary),
-                onTap: () {
-                  // TODO: Image picker for evidence
-                },
+                onTap: _pickEvidence,
               ),
             ),
             const SizedBox(height: 24),
@@ -173,16 +177,39 @@ class _RaiseDisputeScreenState extends ConsumerState<RaiseDisputeScreen> {
     );
   }
 
+  Future<void> _pickEvidence() async {
+    final picked = await ImagePicker().pickMultiImage(
+      imageQuality: 80,
+      maxWidth: 1600,
+    );
+    if (picked.isEmpty) return;
+    setState(() {
+      _evidence
+        ..clear()
+        ..addAll(picked);
+    });
+  }
+
   Future<void> _submit() async {
     setState(() => _submitting = true);
     try {
-      await ref.read(disputesRepositoryProvider).raiseDispute(
-            jobId: widget.jobId,
-            reason: _selectedReason!,
-            description: _descController.text.trim().isNotEmpty
-                ? _descController.text.trim()
-                : null,
-          );
+      final repo = ref.read(disputesRepositoryProvider);
+
+      // Upload evidence first so URLs can be attached to the dispute row.
+      final urls = <String>[];
+      for (final file in _evidence) {
+        final url = await repo.uploadEvidence(widget.jobId, file.path);
+        urls.add(url);
+      }
+
+      await repo.raiseDispute(
+        jobId: widget.jobId,
+        reason: _selectedReason!,
+        description: _descController.text.trim().isNotEmpty
+            ? _descController.text.trim()
+            : null,
+        evidenceUrls: urls.isEmpty ? null : urls,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

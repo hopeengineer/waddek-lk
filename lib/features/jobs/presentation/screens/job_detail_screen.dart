@@ -126,7 +126,8 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                 if (job.status == 'draft') ...[
                   const SizedBox(height: 24),
                   NeonButton(
-                    label: '📡 Broadcast to Workers',
+                    label: 'Broadcast to Workers',
+                    icon: Icons.broadcast_on_personal,
                     isLoading: _broadcasting,
                     onPressed: () => _broadcastJob(job.id),
                   ),
@@ -168,8 +169,14 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                       );
                     }
                     return Column(
-                      children:
-                          bids.map((b) => _BidCard(bid: b, jobStatus: job.status, onAccept: () => _acceptBid(job.id, b))).toList(),
+                      children: bids
+                          .map((b) => _BidCard(
+                                bid: b,
+                                jobStatus: job.status,
+                                onAccept: () => _acceptBid(job.id, b),
+                                onReject: () => _rejectBid(b.id),
+                              ))
+                          .toList(),
                     );
                   },
                 ),
@@ -212,7 +219,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Job broadcast to nearby workers! 📡'),
+            content: Text('Job broadcast to nearby workers.'),
             backgroundColor: AppColors.neonGreen,
           ),
         );
@@ -240,8 +247,52 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Bid accepted! Worker matched 🎉'),
+            content: Text('Bid accepted. Worker matched.'),
             backgroundColor: AppColors.neonGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'),
+              backgroundColor: AppColors.neonRed),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectBid(String bidId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgSurface,
+        title: const Text('Decline bid?',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: const Text(
+            'The worker will be notified. You can still accept other bids.',
+            style: TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Decline',
+                style: TextStyle(color: AppColors.neonRed)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await ref.read(customerJobsProvider.notifier).rejectBid(bidId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bid declined.'),
+            backgroundColor: AppColors.neonAmber,
           ),
         );
       }
@@ -302,10 +353,12 @@ class _BidCard extends StatelessWidget {
     required this.bid,
     required this.jobStatus,
     required this.onAccept,
+    required this.onReject,
   });
   final BidModel bid;
   final String jobStatus;
   final VoidCallback onAccept;
+  final VoidCallback onReject;
 
   @override
   Widget build(BuildContext context) {
@@ -314,11 +367,16 @@ class _BidCard extends StatelessWidget {
     final rating =
         (bid.workerData?['average_rating'] as num?)?.toDouble() ?? 0;
     final tier = bid.workerData?['tier'] as String? ?? 'waddek';
-    final tierEmoji = tier == 'supiri'
-        ? '👑'
+    final tierIcon = tier == 'supiri'
+        ? Icons.workspace_premium
         : tier == 'professional'
-            ? '🔷'
-            : '⚡';
+            ? Icons.verified_user
+            : Icons.bolt;
+    final tierColor = tier == 'supiri'
+        ? AppColors.neonAmber
+        : tier == 'professional'
+            ? AppColors.neonCyan
+            : AppColors.textSecondary;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -354,7 +412,7 @@ class _BidCard extends StatelessWidget {
                                     color: AppColors.textPrimary,
                                     fontWeight: FontWeight.w600)),
                             const SizedBox(width: 6),
-                            Text(tierEmoji, style: const TextStyle(fontSize: 14)),
+                            Icon(tierIcon, size: 14, color: tierColor),
                           ],
                         ),
                         if (rating > 0) RatingStars(rating: rating, size: 14),
@@ -383,9 +441,7 @@ class _BidCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: () {
-                        // TODO: Reject bid
-                      },
+                      onPressed: onReject,
                       child: const Text('Decline',
                           style: TextStyle(color: AppColors.neonRed)),
                     ),
@@ -410,10 +466,18 @@ class _BidCard extends StatelessWidget {
                     color: AppColors.neonGreen.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('✓ Accepted',
-                      style: TextStyle(
-                          color: AppColors.neonGreen,
-                          fontWeight: FontWeight.w600)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.check_circle,
+                          color: AppColors.neonGreen, size: 14),
+                      SizedBox(width: 4),
+                      Text('Accepted',
+                          style: TextStyle(
+                              color: AppColors.neonGreen,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
             ],
           ),

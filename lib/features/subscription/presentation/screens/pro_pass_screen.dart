@@ -49,8 +49,8 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
               ),
               child: Column(
                 children: [
-                  const Text('🔷',
-                      style: TextStyle(fontSize: 48)),
+                  const Icon(Icons.workspace_premium,
+                      size: 56, color: AppColors.neonPurple),
                   const SizedBox(height: 12),
                   const Text(
                     'Waddek Pro Pass',
@@ -104,7 +104,7 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
             _benefitCard(
               Icons.verified,
               'Verified Badge',
-              'Stand out with the 🔷 Pro badge on your profile and bids.',
+              'Stand out with the Pro badge on your profile and bids.',
               AppColors.neonPurple,
             ),
             _benefitCard(
@@ -121,10 +121,18 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    const Text('💡 Break-even calculation',
-                        style: TextStyle(
-                            color: AppColors.neonAmber,
-                            fontWeight: FontWeight.w600)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.lightbulb_outline,
+                            color: AppColors.neonAmber, size: 18),
+                        SizedBox(width: 6),
+                        Text('Break-even calculation',
+                            style: TextStyle(
+                                color: AppColors.neonAmber,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     const Text(
                       'At Rs. 75/lead, Pro Pass pays for itself after just 20 unlocks. '
@@ -141,7 +149,8 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
 
             // ── Subscribe CTA ──
             NeonButton(
-              label: '🔷 Subscribe to Pro Pass',
+              label: 'Subscribe to Pro Pass',
+              icon: Icons.workspace_premium,
               isLoading: _subscribing,
               onPressed: () => _subscribe(profile),
             ),

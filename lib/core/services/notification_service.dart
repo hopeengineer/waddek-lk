@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../router/app_router.dart';
 
 /// OneSignal push notification service.
 ///
@@ -42,7 +45,7 @@ class NotificationService {
     OneSignal.Notifications.addClickListener((event) {
       final data = event.notification.additionalData;
       debugPrint('[NotificationService] Tapped: $data');
-      // TODO: Navigate based on notification data (e.g., open chat, job, dispute)
+      _routeFromPayload(data);
     });
 
     // Listen for push subscription changes
@@ -71,6 +74,39 @@ class NotificationService {
   /// Call on logout.
   void clearUser() {
     OneSignal.logout();
+  }
+
+  /// Route based on push payload. Keep keys in sync with the
+  /// `data` field set by the broadcast-job / payhere-notify edge functions.
+  void _routeFromPayload(Map<String, dynamic>? data) {
+    if (data == null) return;
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx == null) return;
+
+    final type = data['type'] as String?;
+    switch (type) {
+      case 'new_job':
+      case 'bid_accepted':
+      case 'bid_rejected':
+        final jobId = data['job_id'] as String?;
+        if (jobId != null) ctx.push('/jobs/$jobId');
+        return;
+      case 'job_matched':
+      case 'new_message':
+        final convId = data['conversation_id'] as String?;
+        if (convId != null) ctx.push('/chat/$convId');
+        return;
+      case 'wallet':
+      case 'subscription':
+        ctx.push('/wallet');
+        return;
+      case 'dispute':
+        final jobId = data['job_id'] as String?;
+        if (jobId != null) ctx.push('/dispute/$jobId');
+        return;
+      default:
+        ctx.push('/notifications');
+    }
   }
 
   /// Save OneSignal player ID to the user's profile for targeting.

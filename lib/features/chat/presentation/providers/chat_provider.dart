@@ -13,8 +13,9 @@ final conversationsProvider =
   return ref.read(chatRepositoryProvider).getConversations();
 });
 
-/// Realtime messages stream for a conversation.
-final messagesStreamProvider =
-    StreamProvider.family<List<MessageModel>, String>((ref, conversationId) {
+/// Realtime messages stream for a conversation. AutoDispose so that
+/// leaving the chat screen closes the realtime subscription.
+final messagesStreamProvider = StreamProvider.autoDispose
+    .family<List<MessageModel>, String>((ref, conversationId) {
   return ref.read(chatRepositoryProvider).streamMessages(conversationId);
 });

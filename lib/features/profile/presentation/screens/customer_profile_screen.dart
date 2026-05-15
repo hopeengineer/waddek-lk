@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
@@ -232,11 +233,54 @@ class _CustomerProfileScreenState
   }
 
   Future<void> _pickAvatar() async {
-    // TODO: Use image_picker to select photo
-    // final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    // if (picked != null) {
-    //   await ref.read(currentProfileProvider.notifier).uploadAvatar(picked.path);
-    // }
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.bgSurface,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera,
+                  color: AppColors.neonCyan),
+              title: const Text('Take photo',
+                  style: TextStyle(color: AppColors.textPrimary)),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library,
+                  color: AppColors.neonCyan),
+              title: const Text('Choose from gallery',
+                  style: TextStyle(color: AppColors.textPrimary)),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 800,
+    );
+    if (picked == null) return;
+
+    try {
+      await ref
+          .read(currentProfileProvider.notifier)
+          .uploadAvatar(picked.path);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Avatar upload failed: $e'),
+            backgroundColor: AppColors.neonRed,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _saveProfile() async {

@@ -145,6 +145,14 @@ class JobsRepository {
     return urls;
   }
 
+  /// Replace the `photo_urls` array on a job row.
+  Future<void> setJobPhotos(String jobId, List<String> urls) async {
+    await _client
+        .from(SupabaseConstants.jobs)
+        .update({'photo_urls': urls})
+        .eq('id', jobId);
+  }
+
   // ── Bids — Read ──────────────────────────────────────────
 
   /// Fetch bids for a job (customer view — includes worker info).

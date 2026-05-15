@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Enums used across the Waddek.lk application.
 /// Mirror the Postgres enums defined in the database schema.
 
@@ -27,14 +29,16 @@ enum TierLevel {
     }
   }
 
-  String get emoji {
+  /// Material icon representing this tier. Replaces the older emoji
+  /// glyph in UI; emoji rendering varied wildly across devices/fonts.
+  IconData get icon {
     switch (this) {
       case TierLevel.waddek:
-        return '⚡';
+        return Icons.bolt;
       case TierLevel.professional:
-        return '🔷';
+        return Icons.verified_user;
       case TierLevel.supiri:
-        return '👑';
+        return Icons.workspace_premium;
     }
   }
 }

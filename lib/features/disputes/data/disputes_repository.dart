@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/supabase_constants.dart';
@@ -56,18 +58,20 @@ class DisputesRepository {
         .toList();
   }
 
-  /// Upload evidence photo.
+  /// Upload an evidence photo to the evidence bucket and return its
+  /// public URL. Path is namespaced by user and job for sane RLS rules.
   Future<String> uploadEvidence(String jobId, String filePath) async {
     final userId = _client.auth.currentUser!.id;
     final ext = filePath.split('.').last;
-    final path = '$userId/$jobId/${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final storagePath =
+        '$userId/$jobId/${DateTime.now().millisecondsSinceEpoch}.$ext';
 
     await _client.storage
         .from(SupabaseConstants.evidenceBucket)
-        .upload(path, Uri.parse(filePath) as dynamic);
+        .upload(storagePath, File(filePath));
 
     return _client.storage
         .from(SupabaseConstants.evidenceBucket)
-        .getPublicUrl(path);
+        .getPublicUrl(storagePath);
   }
 }

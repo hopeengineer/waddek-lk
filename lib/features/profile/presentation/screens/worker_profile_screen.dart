@@ -20,17 +20,7 @@ class WorkerProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(currentProfileProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: AppColors.neonCyan),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('My Profile')),
       body: profileAsync.when(
         loading: () => const LoadingShimmer(),
         error: (e, _) => Center(child: Text('Error: $e')),
@@ -67,11 +57,6 @@ class WorkerProfileScreen extends ConsumerWidget {
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600)),
                         const SizedBox(height: 12),
-                        _actionTile(Icons.edit, 'Edit Profile', () {}),
-                        _actionTile(Icons.photo_library, 'Portfolio', () {}),
-                        _actionTile(Icons.category, 'My Skills', () {}),
-                        _actionTile(Icons.location_on, 'Update Location', () {}),
-                        const Divider(color: AppColors.bgSurface, height: 16),
                         _actionTile(Icons.swap_horiz, 'Switch to Customer Mode', () {
                           ref.read(activeRoleProvider.notifier).switchRole('customer');
                           context.go('/customer/home');
@@ -89,11 +74,17 @@ class WorkerProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(profile) {
-    final tierEmoji = {
-      'waddek': '⚡',
-      'professional': '🔷',
-      'supiri': '👑',
-    }[profile.tier] ?? '⚡';
+    final tier = profile.tier.toString();
+    final tierIcon = tier == 'supiri'
+        ? Icons.workspace_premium
+        : tier == 'professional'
+            ? Icons.verified_user
+            : Icons.bolt;
+    final tierColor = tier == 'supiri'
+        ? AppColors.neonAmber
+        : tier == 'professional'
+            ? AppColors.neonCyan
+            : AppColors.textSecondary;
 
     return Column(
       children: [
@@ -121,17 +112,24 @@ class WorkerProfileScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.neonCyan.withOpacity(0.15),
+            color: tierColor.withOpacity(0.15),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            '$tierEmoji ${profile.tier.toString().toUpperCase()}',
-            style: const TextStyle(
-              color: AppColors.neonCyan,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(tierIcon, size: 14, color: tierColor),
+              const SizedBox(width: 6),
+              Text(
+                tier.toUpperCase(),
+                style: TextStyle(
+                  color: tierColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),
@@ -186,7 +184,7 @@ class WorkerProfileScreen extends ConsumerWidget {
       case 'verified':
         statusColor = AppColors.neonGreen;
         statusIcon = Icons.verified;
-        statusText = 'Verified ✓';
+        statusText = 'Verified';
         break;
       case 'pending':
         statusColor = AppColors.neonAmber;

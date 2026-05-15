@@ -21,9 +21,10 @@ final availableJobsProvider = StateNotifierProvider<AvailableJobsNotifier,
   return AvailableJobsNotifier(ref.read(jobsRepositoryProvider));
 });
 
-/// Bids for a specific job (realtime).
-final jobBidsProvider = StreamProvider.family<List<BidModel>, String>(
-    (ref, jobId) {
+/// Bids for a specific job (realtime). AutoDispose so the realtime
+/// subscription closes when the job detail screen is popped.
+final jobBidsProvider = StreamProvider.autoDispose
+    .family<List<BidModel>, String>((ref, jobId) {
   final repo = ref.read(jobsRepositoryProvider);
   return repo.streamBidsForJob(jobId).map(
         (rows) => rows.map((b) => BidModel.fromJson(b)).toList(),
@@ -96,6 +97,11 @@ class CustomerJobsNotifier
     final matched =
         await _repo.matchWorker(jobId: jobId, workerId: workerId);
     _replaceJob(matched);
+  }
+
+  /// Reject a bid.
+  Future<void> rejectBid(String bidId) async {
+    await _repo.rejectBid(bidId);
   }
 
   /// Cancel a job.

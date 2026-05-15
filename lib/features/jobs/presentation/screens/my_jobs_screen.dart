@@ -90,11 +90,37 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
 }
 
 /// Worker view: list of available jobs in their category area.
-class AvailableJobsScreen extends ConsumerWidget {
+class AvailableJobsScreen extends ConsumerStatefulWidget {
   const AvailableJobsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AvailableJobsScreen> createState() =>
+      _AvailableJobsScreenState();
+}
+
+class _AvailableJobsScreenState extends ConsumerState<AvailableJobsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
+  }
+
+  Future<void> _reload() async {
+    final profile = ref.read(currentProfileProvider).valueOrNull;
+    if (profile == null) return;
+    final cats = await ref
+        .read(profileRepositoryProvider)
+        .getWorkerCategories(profile.id);
+    final categoryIds =
+        cats.map<String>((c) => c['category_id'] as String).toList();
+    await ref.read(availableJobsProvider.notifier).loadJobs(
+          workerId: profile.id,
+          categoryIds: categoryIds,
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final jobsAsync = ref.watch(availableJobsProvider);
 
     return Scaffold(
@@ -104,27 +130,35 @@ class AvailableJobsScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (jobs) {
           if (jobs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.search_off,
-                      color: AppColors.textSecondary, size: 64),
-                  SizedBox(height: 16),
-                  Text('No available jobs right now',
-                      style: TextStyle(
-                          color: AppColors.textPrimary, fontSize: 18)),
-                  SizedBox(height: 8),
-                  Text('We\'ll notify you when new jobs match your skills',
-                      style: TextStyle(color: AppColors.textSecondary)),
+            return RefreshIndicator(
+              onRefresh: _reload,
+              child: ListView(
+                children: [
+                  const SizedBox(height: 120),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.search_off,
+                            color: AppColors.textSecondary, size: 64),
+                        SizedBox(height: 16),
+                        Text('No available jobs right now',
+                            style: TextStyle(
+                                color: AppColors.textPrimary, fontSize: 18)),
+                        SizedBox(height: 8),
+                        Text(
+                            'We\'ll notify you when new jobs match your skills',
+                            style: TextStyle(
+                                color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );
           }
           return RefreshIndicator(
-            onRefresh: () async {
-              // TODO: reload with worker's category ids
-            },
+            onRefresh: _reload,
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: jobs.length,

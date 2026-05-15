@@ -62,19 +62,37 @@ class ProfileRepository {
     return List<Map<String, dynamic>>.from(data);
   }
 
-  /// Search workers by name (fuzzy match).
+  /// Search workers by name fuzzy match. If [categoryId] is supplied,
+  /// limit to workers who registered that category in
+  /// `worker_categories`.
   Future<List<ProfileModel>> searchWorkers({
     required String query,
     String? categoryId,
   }) async {
-    var request = _client
+    // Limit to worker accounts (current role or signup role).
+    var builder = _client
         .from(SupabaseConstants.profiles)
         .select()
-        .or('role.eq.worker,active_role.eq.worker')
-        .ilike('full_name', '%$query%');
+        .or('role.eq.worker,active_role.eq.worker');
+
+    if (query.isNotEmpty) {
+      builder = builder.ilike('full_name', '%$query%');
+    }
+
+    if (categoryId != null && categoryId.isNotEmpty) {
+      final rows = await _client
+          .from(SupabaseConstants.workerCategories)
+          .select('worker_id')
+          .eq('category_id', categoryId);
+      final workerIds = rows
+          .map<String>((r) => r['worker_id'] as String)
+          .toList(growable: false);
+      if (workerIds.isEmpty) return [];
+      builder = builder.inFilter('id', workerIds);
+    }
 
     final data =
-        await request.order('average_rating', ascending: false).limit(20);
+        await builder.order('average_rating', ascending: false).limit(20);
     return data.map<ProfileModel>((p) => ProfileModel.fromJson(p)).toList();
   }
 

@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../features/profile/presentation/providers/profile_provider.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/phone_otp_screen.dart';
@@ -29,11 +34,44 @@ import '../../features/chat/presentation/screens/chat_screen.dart';
 import '../../features/reviews/presentation/screens/submit_review_screen.dart';
 import '../../features/disputes/presentation/screens/raise_dispute_screen.dart';
 
+/// Global key for the root navigator. Used by services (e.g.
+/// [NotificationService]) that need to navigate without a BuildContext.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Bridges Supabase auth changes + Riverpod state into a
+/// [ChangeNotifier] that GoRouter can subscribe to. Without this the
+/// router only evaluates redirects on navigation events, so the user
+/// could stay on `/auth/login` after a successful sign-in or stay on
+/// a customer route after switching to worker mode.
+class _AuthRoleListenable extends ChangeNotifier {
+  _AuthRoleListenable(this._ref) {
+    _sub = SupabaseService.client.auth.onAuthStateChange.listen((_) {
+      notifyListeners();
+    });
+    _ref.listen(activeRoleProvider, (_, __) => notifyListeners());
+    _ref.listen(currentProfileProvider, (_, __) => notifyListeners());
+  }
+
+  final Ref _ref;
+  late final StreamSubscription _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
 /// GoRouter configuration with auth guards and role-based navigation.
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final listenable = _AuthRoleListenable(ref);
+  ref.onDispose(listenable.dispose);
+
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
+    refreshListenable: listenable,
     redirect: (context, state) {
       final session = SupabaseService.client.auth.currentSession;
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
@@ -48,15 +86,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/';
       }
 
-      // Role-based guards: prevent cross-role navigation
-      final loc = state.matchedLocation;
+      // Role-based guards: prevent cross-role navigation. Skip while
+      // the profile is still loading — otherwise the default 'customer'
+      // role would yank a worker onto /customer/home on cold boot.
       if (session != null) {
+        final profileAsync = ref.read(currentProfileProvider);
+        if (profileAsync.isLoading) return null;
+
+        final loc = state.matchedLocation;
         final role = ref.read(activeRoleProvider);
-        // Customer trying to access worker routes
         if (role == 'customer' && loc.startsWith('/worker')) {
           return '/customer/home';
         }
-        // Worker trying to access customer routes
         if (role == 'worker' && loc.startsWith('/customer')) {
           return '/worker/jobs';
         }
@@ -180,7 +221,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/search',
         name: 'search',
-        builder: (context, state) => const SearchScreen(),
+        builder: (context, state) =>
+            SearchScreen(initialCategoryId: state.extra as String?),
       ),
       GoRoute(
         path: '/jobs/create',

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
@@ -25,6 +27,8 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
   final _addressCtrl = TextEditingController();
   String? _selectedCategoryId;
   bool _saving = false;
+  bool _locating = false;
+  final List<XFile> _photos = [];
 
   // Default location — Colombo city center (will be replaced by user's location)
   double _lat = 6.9271;
@@ -158,33 +162,40 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
             ),
             const SizedBox(height: 8),
             TextButton.icon(
-              icon: const Icon(Icons.my_location,
-                  color: AppColors.neonCyan, size: 18),
+              icon: _locating
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.neonCyan),
+                    )
+                  : const Icon(Icons.my_location,
+                      color: AppColors.neonCyan, size: 18),
               label: const Text('Use current location',
                   style: TextStyle(color: AppColors.neonCyan)),
-              onPressed: () {
-                // TODO: Use geolocator
-              },
+              onPressed: _locating ? null : _useCurrentLocation,
             ),
             const SizedBox(height: 24),
 
             // ── Photos ──
             NeonCard(
               child: InkWell(
-                onTap: () {
-                  // TODO: image_picker multi
-                },
+                onTap: _pickPhotos,
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.add_photo_alternate,
+                    children: [
+                      const Icon(Icons.add_photo_alternate,
                           color: AppColors.neonCyan, size: 28),
-                      SizedBox(width: 12),
-                      Text('Add Photos (optional)',
-                          style:
-                              TextStyle(color: AppColors.textSecondary)),
+                      const SizedBox(width: 12),
+                      Text(
+                        _photos.isEmpty
+                            ? 'Add Photos (optional)'
+                            : '${_photos.length} photo${_photos.length == 1 ? '' : 's'} attached',
+                        style: const TextStyle(
+                            color: AppColors.textSecondary),
+                      ),
                     ],
                   ),
                 ),
@@ -239,10 +250,20 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                 budgetMax: double.tryParse(_budgetMaxCtrl.text),
               );
 
+      // Upload photos (if any) after the job exists, then attach URLs.
+      if (_photos.isNotEmpty) {
+        final repo = ref.read(jobsRepositoryProvider);
+        final urls = await repo.uploadJobPhotos(
+          jobId: job.id,
+          filePaths: _photos.map((p) => p.path).toList(),
+        );
+        await repo.setJobPhotos(job.id, urls);
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Job posted! 🎉'),
+            content: Text('Job posted.'),
             backgroundColor: AppColors.neonGreen,
           ),
         );
@@ -253,6 +274,54 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     } finally {
       setState(() => _saving = false);
     }
+  }
+
+  Future<void> _useCurrentLocation() async {
+    setState(() => _locating = true);
+    try {
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
+        _showError('Location permission denied');
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+      setState(() {
+        _lat = pos.latitude;
+        _lng = pos.longitude;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location set.'),
+            backgroundColor: AppColors.neonGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      _showError('Could not get location: $e');
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
+  Future<void> _pickPhotos() async {
+    final picked = await ImagePicker().pickMultiImage(
+      imageQuality: 80,
+      maxWidth: 1600,
+    );
+    if (picked.isEmpty) return;
+    setState(() {
+      _photos
+        ..clear()
+        ..addAll(picked);
+    });
   }
 
   void _showError(String msg) {

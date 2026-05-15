@@ -145,8 +145,8 @@ class _ProPassActiveCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Text('🔷',
-                    style: TextStyle(fontSize: 24)),
+                const Icon(Icons.workspace_premium,
+                    color: AppColors.neonCyan, size: 22),
                 const SizedBox(width: 8),
                 const Text('Waddek Pro Pass',
                     style: TextStyle(
@@ -226,7 +226,8 @@ class _ProPassUpsellCard extends StatelessWidget {
           children: [
             Row(
               children: const [
-                Text('👑', style: TextStyle(fontSize: 24)),
+                Icon(Icons.workspace_premium,
+                    color: AppColors.neonAmber, size: 22),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(

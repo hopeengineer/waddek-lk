@@ -214,7 +214,8 @@ class CustomerHomeScreen extends ConsumerWidget {
                             name: cat['name_en'] as String? ?? 'Category',
                             icon: cat['icon'] as String?,
                             onTap: () {
-                              // TODO: Navigate to category job list
+                              final id = cat['id'] as String?;
+                              context.push('/search', extra: id);
                             },
                           );
                         },

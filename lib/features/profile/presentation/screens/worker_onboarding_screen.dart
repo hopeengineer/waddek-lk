@@ -253,7 +253,7 @@ class _WorkerOnboardingScreenState
                         style: const TextStyle(
                             color: AppColors.textPrimary, fontSize: 16)),
                     Text(
-                      path != null ? 'Photo selected ✓' : 'Tap to upload',
+                      path != null ? 'Photo selected' : 'Tap to upload',
                       style: TextStyle(
                         color: path != null
                             ? AppColors.neonGreen
@@ -485,7 +485,7 @@ class _WorkerOnboardingScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Welcome, Worker! 🎉 You\'re all set.'),
+            content: Text('Welcome, Worker! You\'re all set.'),
             backgroundColor: AppColors.neonGreen,
           ),
         );
