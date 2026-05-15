@@ -9,6 +9,11 @@ class ReviewsRepository {
   final _client = SupabaseService.client;
 
   /// Submit a review for a completed job.
+  ///
+  /// The DB columns are `reviewer_id` / `reviewee_id` (generic — a
+  /// worker could in principle review a customer too). The client
+  /// model uses the customer→worker-specific names `customer_id` /
+  /// `worker_id`, so we alias on the way in and out.
   Future<ReviewModel> submitReview({
     required String jobId,
     required String workerId,
@@ -18,19 +23,23 @@ class ReviewsRepository {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw Exception('Not authenticated');
 
-    final data = await _client
+    final row = await _client
         .from(SupabaseConstants.reviews)
         .insert({
           'job_id': jobId,
-          'customer_id': userId,
-          'worker_id': workerId,
+          'reviewer_id': userId,
+          'reviewee_id': workerId,
           'rating': rating,
           'comment': comment,
         })
         .select()
         .single();
 
-    return ReviewModel.fromJson(data);
+    return ReviewModel.fromJson({
+      ...row,
+      'customer_id': row['reviewer_id'],
+      'worker_id': row['reviewee_id'],
+    });
   }
 
   /// Fetch reviews for a worker. Uses a SECURITY DEFINER RPC so the
@@ -50,7 +59,9 @@ class ReviewsRepository {
         .toList();
   }
 
-  /// Check if customer already reviewed a job.
+  /// Check if the current user already submitted a review for this
+  /// job (matches the DB column `reviewer_id`, not the legacy
+  /// `customer_id` alias used in the client model).
   Future<bool> hasReviewed(String jobId) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return false;
@@ -59,7 +70,7 @@ class ReviewsRepository {
         .from(SupabaseConstants.reviews)
         .select('id')
         .eq('job_id', jobId)
-        .eq('customer_id', userId)
+        .eq('reviewer_id', userId)
         .maybeSingle();
 
     return data != null;
