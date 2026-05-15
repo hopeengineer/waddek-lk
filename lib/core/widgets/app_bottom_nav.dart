@@ -31,10 +31,14 @@ class _AppBottomNavState extends ConsumerState<AppBottomNav> {
             _NavItem(Icons.person, 'Profile', '/worker/profile'),
           ]
         : [
+            // Profile lives behind the top-right avatar on the home
+            // screen, so it doesn't need a nav slot. Messages takes
+            // that slot since it's a primary action customers reach
+            // for during a job.
             _NavItem(Icons.home, 'Home', '/customer/home'),
             _NavItem(Icons.work, 'My Jobs', '/customer/jobs'),
+            _NavItem(Icons.chat_bubble, 'Messages', '/conversations'),
             _NavItem(Icons.notifications, 'Alerts', '/notifications'),
-            _NavItem(Icons.person, 'Profile', '/customer/profile'),
           ];
   }
 

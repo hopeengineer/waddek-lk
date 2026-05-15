@@ -57,6 +57,8 @@ class CustomerHomeScreen extends ConsumerWidget {
                 ),
 
                 // ── Quick actions ──────────────────────────────
+                // Quick actions kept lean — My Jobs / Messages /
+                // Profile all live in the bottom nav or top avatar.
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -69,24 +71,6 @@ class CustomerHomeScreen extends ConsumerWidget {
                             label: 'Post Job',
                             color: AppColors.neonCyan,
                             onTap: () => context.pushNamed('create-job'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _QuickAction(
-                            icon: Icons.work_outline,
-                            label: 'My Jobs',
-                            color: AppColors.neonPurple,
-                            onTap: () => context.go('/customer/jobs'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _QuickAction(
-                            icon: Icons.chat_bubble_outline,
-                            label: 'Messages',
-                            color: AppColors.neonGreen,
-                            onTap: () => context.pushNamed('conversations'),
                           ),
                         ),
                         const SizedBox(width: 8),
