@@ -62,6 +62,32 @@ class ProfileRepository {
     return List<Map<String, dynamic>>.from(data);
   }
 
+  /// Distance-sorted worker discovery for the customer home screen.
+  /// Returns rows from the `find_workers_for_customer` RPC including
+  /// each worker's distance from the given coordinates (meters).
+  /// Workers without a stored location are excluded by the RPC.
+  Future<List<Map<String, dynamic>>> findWorkersNearCustomer({
+    required double lat,
+    required double lng,
+    String? categoryId,
+    bool onlineOnly = false,
+    int radiusMeters = 50000,
+    int limit = 50,
+  }) async {
+    final data = await _client.rpc(
+      'find_workers_for_customer',
+      params: {
+        'p_lat': lat,
+        'p_lng': lng,
+        'p_category_id': categoryId,
+        'p_online_only': onlineOnly,
+        'p_radius_meters': radiusMeters,
+        'p_limit': limit,
+      },
+    );
+    return List<Map<String, dynamic>>.from(data as List);
+  }
+
   /// Search workers by name fuzzy match. If [categoryId] is supplied,
   /// limit to workers who registered that category in
   /// `worker_categories`.

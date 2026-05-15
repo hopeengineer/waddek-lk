@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/location_service.dart';
 import '../../data/profile_repository.dart';
 import '../../domain/profile_model.dart';
 
@@ -37,6 +38,41 @@ final workerSkillsProvider = FutureProvider.autoDispose
 final workerPortfolioProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, String>((ref, workerId) async {
   return ref.read(profileRepositoryProvider).getPortfolioImages(workerId);
+});
+
+// ── Customer home discovery state ────────────────────────────────
+
+/// Selected category id for the customer home discovery list.
+/// Null means "All categories".
+final selectedDiscoveryCategoryProvider =
+    StateProvider<String?>((ref) => null);
+
+/// Whether the customer home filters to online-only workers.
+final discoveryOnlineOnlyProvider = StateProvider<bool>((ref) => false);
+
+/// The customer's current device location, fetched once per session.
+/// Null while pending or if permission was denied.
+final customerLocationProvider =
+    FutureProvider<({double lat, double lng})?>((ref) async {
+  final pos = await LocationService().getCurrentPosition();
+  if (pos == null) return null;
+  return (lat: pos.latitude, lng: pos.longitude);
+});
+
+/// Discovery results — nearest workers, filtered by selected category
+/// and online toggle. Returns empty list until location resolves.
+final nearbyWorkersProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final loc = await ref.watch(customerLocationProvider.future);
+  if (loc == null) return [];
+  final categoryId = ref.watch(selectedDiscoveryCategoryProvider);
+  final onlineOnly = ref.watch(discoveryOnlineOnlyProvider);
+  return ref.read(profileRepositoryProvider).findWorkersNearCustomer(
+        lat: loc.lat,
+        lng: loc.lng,
+        categoryId: categoryId,
+        onlineOnly: onlineOnly,
+      );
 });
 
 /// Profile state management.
