@@ -62,8 +62,12 @@ class CustomerHomeScreen extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                    // Default CrossAxisAlignment.center — Row inside a
+                    // sliver has unbounded vertical extent, and
+                    // .stretch tries to force children to fill that
+                    // infinite height, throwing "BoxConstraints
+                    // forces an infinite height".
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
                           child: _QuickAction(
