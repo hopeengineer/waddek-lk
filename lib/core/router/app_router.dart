@@ -7,9 +7,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/profile/presentation/providers/profile_provider.dart';
 
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/phone_otp_screen.dart';
+import '../../features/auth/presentation/screens/new_password_screen.dart';
 import '../../features/auth/presentation/screens/otp_verify_screen.dart';
+import '../../features/auth/presentation/screens/phone_otp_screen.dart';
 import '../../features/auth/presentation/screens/registration_screen.dart';
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
 import '../../features/home/presentation/screens/customer_home_screen.dart';
@@ -151,6 +153,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/auth/role',
         name: 'role-selection',
         builder: (context, state) => const RoleSelectionScreen(),
+      ),
+      GoRoute(
+        path: '/auth/forgot',
+        name: 'forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/auth/verify-reset',
+        name: 'otp-verify-reset',
+        builder: (context, state) {
+          final phone = state.extra as String? ?? '';
+          return OtpVerifyScreen(
+              phone: phone, otpContext: 'password_reset');
+        },
+      ),
+      GoRoute(
+        path: '/auth/new-password',
+        name: 'new-password',
+        builder: (context, state) => const NewPasswordScreen(),
       ),
 
       // ── Onboarding ──────────────────────────────────────

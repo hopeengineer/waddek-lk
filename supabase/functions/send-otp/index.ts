@@ -73,8 +73,8 @@ serve(async (req: Request) => {
           { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-    } else if (context === "login_2fa") {
-      // For 2FA login: ensure phone IS registered
+    } else if (context === "login_2fa" || context === "password_reset") {
+      // For 2FA login and password reset: phone MUST already exist.
       const phoneWithoutPlus = normalizedPhone.replace("+", "");
       const { data: allUsers } = await supabase.auth.admin.listUsers({
         page: 1,

@@ -154,6 +154,13 @@ class AuthRepository {
     });
   }
 
+  /// Update the current authenticated user's password. Called after a
+  /// successful password-reset OTP verification (which establishes the
+  /// session used by this call).
+  Future<void> updatePassword(String newPassword) async {
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
   /// Sign out the current user.
   Future<void> signOut() async {
     await _client.auth.signOut();

@@ -117,6 +117,80 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Send OTP for the password-reset flow. Phone must already be
+  /// registered — the edge function rejects unknown numbers.
+  Future<void> sendPasswordResetOtp(String phone) async {
+    state = state.copyWith(
+      flowState: AuthFlowState.sendingOtp,
+      phone: phone,
+      isLoading: true,
+    );
+    try {
+      final success =
+          await _repo.sendOtp(phone, context: 'password_reset');
+      state = state.copyWith(
+        flowState: success ? AuthFlowState.otpSent : AuthFlowState.error,
+        errorMessage:
+            success ? null : 'Failed to send OTP. Please try again.',
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: e.toString(),
+        isLoading: false,
+      );
+    }
+  }
+
+  /// Verify the OTP for password reset. On success, the user has a
+  /// session — the caller can immediately call [updatePassword].
+  Future<bool> verifyPasswordReset(String code) async {
+    state = state.copyWith(
+      flowState: AuthFlowState.verifying,
+      isLoading: true,
+    );
+    try {
+      await _repo.verifyOtp(state.phone, code, context: 'password_reset');
+      state = state.copyWith(
+        flowState: AuthFlowState.verified,
+        isLoading: false,
+      );
+      return true;
+    } on AuthException catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: e.message,
+        isLoading: false,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: 'Verification failed. Please try again.',
+        isLoading: false,
+      );
+      return false;
+    }
+  }
+
+  /// Replace the password on the currently authenticated user.
+  Future<bool> updatePassword(String newPassword) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await _repo.updatePassword(newPassword);
+      state = state.copyWith(isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: 'Could not update password: $e',
+        isLoading: false,
+      );
+      return false;
+    }
+  }
+
   /// Verify OTP code for 2FA login.
   Future<bool> verify2fa(String code) async {
     state = state.copyWith(

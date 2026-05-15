@@ -180,7 +180,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ],
 
-                    const SizedBox(height: 24),
+                    // Forgot password
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () =>
+                            context.pushNamed('forgot-password'),
+                        child: Text(
+                          'Forgot password?',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.neonCyan,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
 
                     // CTA
                     NeonButton(

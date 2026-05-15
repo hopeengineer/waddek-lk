@@ -115,8 +115,8 @@ serve(async (req: Request) => {
         let userId: string;
         let isNewUser = false;
 
-        if (context === "login_2fa") {
-            // ── Login 2FA: user must already exist ─────────────────
+        if (context === "login_2fa" || context === "password_reset") {
+            // ── Login 2FA / Password reset: user must already exist ─
             const { data: allUsers } = await supabase.auth.admin.listUsers({
                 page: 1,
                 perPage: 50,

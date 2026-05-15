@@ -78,24 +78,36 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     if (code.length != 6) return;
 
     bool success;
-    if (widget.otpContext == 'login_2fa') {
-      // 2FA login: verify and go home
-      success = await ref.read(authProvider.notifier).verify2fa(code);
-      if (success && mounted) {
-        context.go('/');
-      }
-    } else {
-      // Signup: verify and go to registration form
-      success = await ref.read(authProvider.notifier).verifyOtp(code);
-      if (success && mounted) {
-        context.goNamed('register', extra: widget.phone);
-      }
+    final notifier = ref.read(authProvider.notifier);
+    switch (widget.otpContext) {
+      case 'login_2fa':
+        success = await notifier.verify2fa(code);
+        if (success && mounted) context.go('/');
+        return;
+      case 'password_reset':
+        success = await notifier.verifyPasswordReset(code);
+        if (success && mounted) {
+          context.goNamed('new-password');
+        }
+        return;
+      default:
+        success = await notifier.verifyOtp(code);
+        if (success && mounted) {
+          context.goNamed('register', extra: widget.phone);
+        }
     }
   }
 
   Future<void> _resend() async {
     if (!_canResend) return;
-    await ref.read(authProvider.notifier).sendOtp(widget.phone);
+    final notifier = ref.read(authProvider.notifier);
+    switch (widget.otpContext) {
+      case 'password_reset':
+        await notifier.sendPasswordResetOtp(widget.phone);
+        break;
+      default:
+        await notifier.sendOtp(widget.phone);
+    }
     _startResendTimer();
   }
 
