@@ -203,8 +203,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const MyJobsScreen(),
           ),
           GoRoute(
-            path: '/notifications',
-            name: 'notifications',
+            path: '/customer/messages',
+            name: 'customer-messages',
+            builder: (context, state) => const ConversationsScreen(),
+          ),
+          GoRoute(
+            path: '/customer/notifications',
+            name: 'customer-notifications',
             builder: (context, state) => const NotificationsScreen(),
           ),
           GoRoute(
@@ -310,11 +315,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'propass',
         builder: (context, state) => const ProPassScreen(),
       ),
-      GoRoute(
-        path: '/conversations',
-        name: 'conversations',
-        builder: (context, state) => const ConversationsScreen(),
-      ),
+      // /conversations is now /customer/messages inside the
+      // customer ShellRoute (keeps the bottom nav). /chat/:id stays
+      // standalone — individual chats render full-screen.
       GoRoute(
         path: '/chat/:id',
         name: 'chat',

@@ -90,11 +90,8 @@ class ChatRepository {
         .select()
         .single();
 
-    // Update conversation's last_message_at
-    await _client
-        .from(SupabaseConstants.conversations)
-        .update({'last_message_at': DateTime.now().toIso8601String()})
-        .eq('id', conversationId);
+    // No manual conversations.last_message_at update — the
+    // `trg_messages_bump_conversation` trigger keeps it current.
 
     return MessageModel.fromJson(data);
   }

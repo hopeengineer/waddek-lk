@@ -105,7 +105,10 @@ class NotificationService {
         if (jobId != null) ctx.push('/dispute/$jobId');
         return;
       default:
-        ctx.push('/notifications');
+        // The role-specific shell route owns the notifications list.
+        // Workers don't currently have an Alerts tab; for them the
+        // tap goes nowhere obvious, but the in-app banner is shown.
+        ctx.push('/customer/notifications');
     }
   }
 

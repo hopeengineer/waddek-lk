@@ -37,8 +37,8 @@ class _AppBottomNavState extends ConsumerState<AppBottomNav> {
             // for during a job.
             _NavItem(Icons.home, 'Home', '/customer/home'),
             _NavItem(Icons.work, 'My Jobs', '/customer/jobs'),
-            _NavItem(Icons.chat_bubble, 'Messages', '/conversations'),
-            _NavItem(Icons.notifications, 'Alerts', '/notifications'),
+            _NavItem(Icons.chat_bubble, 'Messages', '/customer/messages'),
+            _NavItem(Icons.notifications, 'Alerts', '/customer/notifications'),
           ];
   }
 
