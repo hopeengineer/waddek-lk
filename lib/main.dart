@@ -17,7 +17,18 @@ import 'core/services/notification_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase
+  // Fail fast if secrets weren't injected. Run with
+  //   flutter run --dart-define-from-file=.env
+  // (.env is gitignored — see .env.example for the required keys).
+  if (AppConstants.supabaseUrl.isEmpty ||
+      AppConstants.supabaseAnonKey.isEmpty) {
+    throw StateError(
+      'Missing SUPABASE_URL / SUPABASE_ANON_KEY. '
+      'Run with `flutter run --dart-define-from-file=.env` '
+      '(copy .env.example to .env and fill in the values).',
+    );
+  }
+
   await Supabase.initialize(
     url: AppConstants.supabaseUrl,
     anonKey: AppConstants.supabaseAnonKey,

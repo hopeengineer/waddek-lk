@@ -1,11 +1,14 @@
 /// App-wide constants for Waddek.lk
+///
+/// Secrets are injected at build time via `--dart-define-from-file=.env`
+/// (preferred) or repeated `--dart-define=KEY=VALUE` flags. Do not put
+/// real keys in this file — they end up in source control.
 abstract class AppConstants {
   // ── Supabase ──────────────────────────────────────────────
-  static const supabaseUrl = 'https://dkmjmqkingddvtntpysy.supabase.co';
-  static const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrbWptcWtpbmdkZHZ0bnRweXN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMDk5OTEsImV4cCI6MjA4Njg4NTk5MX0.DXJJRbXOphW-D4hYBTLq_WXdfs9NxGlmrKuk4Ncurtc';
+  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   // ── Google Maps ───────────────────────────────────────────
-  // Passed at build time: flutter run --dart-define=GOOGLE_MAPS_API_KEY=your_key
   static const googleMapsApiKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
 
   // ── Broadcast ─────────────────────────────────────────────
