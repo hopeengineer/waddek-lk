@@ -13,14 +13,17 @@ final activeRoleProvider =
   final initialRole = profile?.activeRole ?? 'customer';
   return ActiveRoleNotifier(
     ref.read(profileRepositoryProvider),
+    ref,
     initialRole,
   );
 });
 
 class ActiveRoleNotifier extends StateNotifier<String> {
-  ActiveRoleNotifier(this._repo, String initialRole) : super(initialRole);
+  ActiveRoleNotifier(this._repo, this._ref, String initialRole)
+      : super(initialRole);
 
   final ProfileRepository _repo;
+  final Ref _ref;
 
   /// Whether the current role is worker.
   bool get isWorker => state == 'worker';
@@ -30,6 +33,8 @@ class ActiveRoleNotifier extends StateNotifier<String> {
     if (role == state) return;
     state = role;
     await _repo.updateActiveRole(role);
+    // Re-fetch profile with updated role data
+    _ref.invalidate(currentProfileProvider);
   }
 
   /// Toggle between customer and worker.

@@ -15,6 +15,8 @@ import '../../features/jobs/presentation/screens/create_job_screen.dart';
 import '../../features/jobs/presentation/screens/my_jobs_screen.dart';
 import '../../features/jobs/presentation/screens/job_detail_screen.dart';
 import '../../features/jobs/presentation/screens/worker_bids_screen.dart';
+import '../../features/home/presentation/screens/search_screen.dart';
+import '../providers/role_provider.dart';
 import '../services/supabase_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../../features/wallet/presentation/screens/wallet_screen.dart';
@@ -44,6 +46,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Logged in but on auth screen → go home
       if (session != null && isAuthRoute) {
         return '/';
+      }
+
+      // Role-based guards: prevent cross-role navigation
+      final loc = state.matchedLocation;
+      if (session != null) {
+        final role = ref.read(activeRoleProvider);
+        // Customer trying to access worker routes
+        if (role == 'customer' && loc.startsWith('/worker')) {
+          return '/customer/home';
+        }
+        // Worker trying to access customer routes
+        if (role == 'worker' && loc.startsWith('/customer')) {
+          return '/worker/jobs';
+        }
       }
 
       return null;
@@ -161,6 +177,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Standalone Screens ──────────────────────────────
+      GoRoute(
+        path: '/search',
+        name: 'search',
+        builder: (context, state) => const SearchScreen(),
+      ),
       GoRoute(
         path: '/jobs/create',
         name: 'create-job',

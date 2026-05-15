@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
+import 'package:waddek_lk/core/providers/role_provider.dart';
 import '../providers/profile_provider.dart';
 
 /// Multi-step worker onboarding: name → NIC → skills → location.
@@ -454,19 +458,38 @@ class _WorkerOnboardingScreenState
       }
 
       // Request location
-      // TODO: Use geolocator to get current position
-      // final pos = await Geolocator.getCurrentPosition();
-      // await notifier.updateLocation(lat: pos.latitude, lng: pos.longitude);
+      try {
+        LocationPermission perm = await Geolocator.checkPermission();
+        if (perm == LocationPermission.denied) {
+          perm = await Geolocator.requestPermission();
+        }
+        if (perm == LocationPermission.whileInUse ||
+            perm == LocationPermission.always) {
+          final pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+            ),
+          );
+          await notifier.updateLocation(
+            lat: pos.latitude,
+            lng: pos.longitude,
+          );
+        }
+      } catch (_) {
+        // Location is optional — continue even if denied
+      }
+
+      // Activate worker role
+      await ref.read(activeRoleProvider.notifier).switchRole('worker');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profile setup complete! 🎉'),
+            content: Text('Welcome, Worker! 🎉 You\'re all set.'),
             backgroundColor: AppColors.neonGreen,
           ),
         );
-        // Navigate to home
-        Navigator.of(context).pushReplacementNamed('/');
+        context.go('/worker/jobs');
       }
     } catch (e) {
       _showError(e.toString());
@@ -476,14 +499,20 @@ class _WorkerOnboardingScreenState
   }
 
   Future<void> _pickNicPhoto(bool isFront) async {
-    // TODO: Use image_picker
-    // final picked = await ImagePicker().pickImage(source: ImageSource.camera);
-    // if (picked != null) {
-    //   setState(() {
-    //     if (isFront) _nicFrontPath = picked.path;
-    //     else _nicBackPath = picked.path;
-    //   });
-    // }
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+      maxWidth: 1200,
+    );
+    if (picked != null) {
+      setState(() {
+        if (isFront) {
+          _nicFrontPath = picked.path;
+        } else {
+          _nicBackPath = picked.path;
+        }
+      });
+    }
   }
 
   void _showError(String message) {

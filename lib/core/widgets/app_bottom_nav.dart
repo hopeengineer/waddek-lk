@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/role_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/role_switch_widget.dart';
+import '../../features/notifications/presentation/providers/notifications_provider.dart';
 
 /// Bottom navigation shell — different tabs for customers vs workers.
 /// Uses [activeRoleProvider] to determine the current role dynamically.
@@ -42,6 +43,11 @@ class _AppBottomNavState extends ConsumerState<AppBottomNav> {
     // Watch role to rebuild when it changes
     final activeRole = ref.watch(activeRoleProvider);
     final items = _items;
+
+    // Reset tab index when role changes to prevent stale selection
+    if (_currentIndex >= items.length) {
+      _currentIndex = 0;
+    }
 
     return Scaffold(
       body: widget.child,
@@ -106,38 +112,74 @@ class _AppBottomNavState extends ConsumerState<AppBottomNav> {
   }
 
   Widget _buildNavItem(_NavItem item, bool isActive, VoidCallback onTap) {
+    // Show badge for Alerts tab
+    Widget? badge;
+    if (item.label == 'Alerts') {
+      final unreadAsync = ref.watch(unreadCountProvider);
+      final count = unreadAsync.valueOrNull ?? 0;
+      if (count > 0) {
+        badge = Positioned(
+          right: 8,
+          top: 0,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(
+              color: AppColors.neonRed,
+              shape: BoxShape.circle,
+            ),
+            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+            child: Text(
+              count > 99 ? '99+' : '$count',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      }
+    }
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? AppColors.neonCyan.withOpacity(0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              item.icon,
-              color: isActive ? AppColors.neonCyan : AppColors.textSecondary,
-              size: 24,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? AppColors.neonCyan.withOpacity(0.12)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 4),
-            Text(
-              item.label,
-              style: TextStyle(
-                color:
-                    isActive ? AppColors.neonCyan : AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  item.icon,
+                  color: isActive ? AppColors.neonCyan : AppColors.textSecondary,
+                  size: 24,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.label,
+                  style: TextStyle(
+                    color:
+                        isActive ? AppColors.neonCyan : AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (badge != null) badge,
+        ],
       ),
     );
   }

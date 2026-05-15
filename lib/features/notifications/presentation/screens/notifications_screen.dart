@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
@@ -99,7 +100,30 @@ class _NotificationTile extends StatelessWidget {
                 .read(notificationsRepositoryProvider)
                 .markAsRead(notification.id);
           }
-          // TODO: Navigate based on notification.data (job_id, etc.)
+          // Navigate based on notification type + data
+          final data = notification.data;
+          switch (notification.type) {
+            case 'new_job':
+            case 'bid_accepted':
+              final jobId = data?['job_id'] as String?;
+              if (jobId != null) {
+                context.pushNamed('job-detail',
+                    pathParameters: {'id': jobId});
+              }
+              break;
+            case 'job_matched':
+              final convId = data?['conversation_id'] as String?;
+              if (convId != null) {
+                context.push('/chat/$convId');
+              }
+              break;
+            case 'wallet':
+            case 'subscription':
+              context.push('/wallet');
+              break;
+            default:
+              break;
+          }
         },
         leading: CircleAvatar(
           backgroundColor: color.withOpacity(0.15),

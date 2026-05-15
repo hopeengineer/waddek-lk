@@ -84,7 +84,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                       // ── Search Bar ──
                       GestureDetector(
                         onTap: () {
-                          // TODO: Navigate to search screen
+                          context.push('/search');
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(

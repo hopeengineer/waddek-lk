@@ -62,6 +62,22 @@ class ProfileRepository {
     return List<Map<String, dynamic>>.from(data);
   }
 
+  /// Search workers by name (fuzzy match).
+  Future<List<ProfileModel>> searchWorkers({
+    required String query,
+    String? categoryId,
+  }) async {
+    var request = _client
+        .from(SupabaseConstants.profiles)
+        .select()
+        .or('role.eq.worker,active_role.eq.worker')
+        .ilike('full_name', '%$query%');
+
+    final data =
+        await request.order('average_rating', ascending: false).limit(20);
+    return data.map<ProfileModel>((p) => ProfileModel.fromJson(p)).toList();
+  }
+
   // ── Create / Update ──────────────────────────────────────
 
   /// Create a new profile after auth.

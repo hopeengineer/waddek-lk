@@ -146,17 +146,28 @@ class _TopUpScreenState extends ConsumerState<TopUpScreen> {
         customerPhone: profile.phone,
       );
 
-      // TODO: Call PayHere.startPayment(payment, onCompleted, onError)
-      // For now, show what would happen:
+      // Launch PayHere payment — the payhere_mobilesdk_flutter SDK
+      // opens a WebView for card/eZ Cash/mCash. After completion,
+      // the notify_url Edge Function credits the wallet automatically.
+      //
+      // PayHere.startPayment(payment,
+      //   (paymentId) { /* onCompleted */ },
+      //   (error) { /* onError */ },
+      //   () { /* onDismissed */ },
+      // );
+      //
+      // For now, show what would happen and refresh wallet:
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
                 'PayHere payment initiated for ${pkg.label} '
-                '(sandbox: ${PayHereService.isSandbox})'),
+                '(Rs. ${pkg.amount.toStringAsFixed(0)})'),
             backgroundColor: AppColors.neonCyan,
           ),
         );
+        // Navigate back after payment flow
+        context.pop();
       }
     } catch (e) {
       if (mounted) {

@@ -165,6 +165,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                       }
                       return null;
                     },
+                    onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock_outline,
                           color: AppColors.textSecondary),
@@ -183,6 +184,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                       ),
                     ),
                   ),
+
+                  // Password strength indicator
+                  if (_passwordController.text.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    _PasswordStrengthBar(
+                        password: _passwordController.text),
+                  ],
 
                   const SizedBox(height: 20),
 
@@ -292,3 +300,61 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     );
   }
 }
+
+class _PasswordStrengthBar extends StatelessWidget {
+  const _PasswordStrengthBar({required this.password});
+  final String password;
+
+  int get _score {
+    int s = 0;
+    if (password.length >= 8) s++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) s++;
+    if (RegExp(r'[0-9]').hasMatch(password)) s++;
+    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password)) s++;
+    return s;
+  }
+
+  Color get _color {
+    if (_score <= 1) return AppColors.neonRed;
+    if (_score == 2) return AppColors.neonAmber;
+    if (_score == 3) return AppColors.neonCyan;
+    return AppColors.neonGreen;
+  }
+
+  String get _label {
+    if (_score <= 1) return 'Weak';
+    if (_score == 2) return 'Fair';
+    if (_score == 3) return 'Good';
+    return 'Strong';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: _score / 4,
+                  minHeight: 4,
+                  backgroundColor: AppColors.bgSurface,
+                  valueColor: AlwaysStoppedAnimation<Color>(_color),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              _label,
+              style: TextStyle(color: _color, fontSize: 11),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
