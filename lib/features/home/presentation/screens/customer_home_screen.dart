@@ -102,17 +102,21 @@ class CustomerHomeScreen extends ConsumerWidget {
                         Text('Online only',
                             style: AppTextStyles.bodySmall),
                         const SizedBox(width: 6),
-                        Transform.scale(
-                          scale: 0.85,
-                          child: Switch.adaptive(
-                            value: onlineOnly,
-                            activeColor: AppColors.neonCyan,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            onChanged: (v) => ref
-                                .read(discoveryOnlineOnlyProvider.notifier)
-                                .state = v,
-                          ),
+                        // Don't wrap in Transform.scale — on
+                        // desktop/web that makes the Switch's hit
+                        // region and visual region disagree, which
+                        // makes Flutter's MouseTracker fire its
+                        // re-entrancy assert on every hover event
+                        // (mouse_tracker.dart:199). shrinkWrap alone
+                        // gives the tighter footprint we want.
+                        Switch.adaptive(
+                          value: onlineOnly,
+                          activeColor: AppColors.neonCyan,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          onChanged: (v) => ref
+                              .read(discoveryOnlineOnlyProvider.notifier)
+                              .state = v,
                         ),
                       ],
                     ),
@@ -168,7 +172,8 @@ class CustomerHomeScreen extends ConsumerWidget {
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
                 // ── Body: location-aware worker list ───────────
-                _DiscoveryBody(
+                _buildDiscoveryBody(
+                  ref: ref,
                   locationAsync: locationAsync,
                   workersAsync: workersAsync,
                 ),
@@ -314,96 +319,92 @@ class _CategoryChip extends StatelessWidget {
 }
 
 // ── Discovery body: handles permission states ────────────────────
-class _DiscoveryBody extends ConsumerWidget {
-  const _DiscoveryBody({
-    required this.locationAsync,
-    required this.workersAsync,
-  });
-
-  final AsyncValue<({double lat, double lng})?> locationAsync;
-  final AsyncValue<List<Map<String, dynamic>>> workersAsync;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return locationAsync.when(
-      loading: () => const SliverToBoxAdapter(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40),
-          child: Center(
-            child: CircularProgressIndicator(color: AppColors.neonCyan),
-          ),
+// Must be a function, not a ConsumerWidget — it returns a Sliver, and
+// CustomScrollView.slivers only accepts widgets whose Element produces
+// a RenderSliver. Wrapping the returned sliver inside a ConsumerWidget
+// (RenderBox) makes the viewport silently render nothing.
+Widget _buildDiscoveryBody({
+  required WidgetRef ref,
+  required AsyncValue<({double lat, double lng})?> locationAsync,
+  required AsyncValue<List<Map<String, dynamic>>> workersAsync,
+}) {
+  return locationAsync.when(
+    loading: () => const SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.neonCyan),
         ),
       ),
-      error: (e, _) => SliverToBoxAdapter(
-        child: _LocationPrompt(
-          onRetry: () => ref.invalidate(customerLocationProvider),
-        ),
+    ),
+    error: (e, _) => SliverToBoxAdapter(
+      child: _LocationPrompt(
+        onRetry: () => ref.invalidate(customerLocationProvider),
       ),
-      data: (loc) {
-        if (loc == null) {
-          return SliverToBoxAdapter(
-            child: _LocationPrompt(
-              onRetry: () => ref.invalidate(customerLocationProvider),
-            ),
-          );
-        }
-        return workersAsync.when(
-          loading: () => const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: LoadingShimmer(),
-            ),
+    ),
+    data: (loc) {
+      if (loc == null) {
+        return SliverToBoxAdapter(
+          child: _LocationPrompt(
+            onRetry: () => ref.invalidate(customerLocationProvider),
           ),
-          error: (e, _) => SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text('Could not load workers: $e',
-                  style: AppTextStyles.bodySmall),
-            ),
+        );
+      }
+      return workersAsync.when(
+        loading: () => const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: LoadingShimmer(),
           ),
-          data: (workers) {
-            if (workers.isEmpty) {
-              return const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 40),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(Icons.location_searching,
-                            color: AppColors.textSecondary, size: 48),
-                        SizedBox(height: 12),
-                        Text('No workers match this filter',
-                            style: TextStyle(
-                                color: AppColors.textPrimary)),
-                        SizedBox(height: 4),
-                        Text(
-                            'Try a different category or turn off "Online only".',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 13)),
-                      ],
-                    ),
+        ),
+        error: (e, _) => SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('Could not load workers: $e',
+                style: AppTextStyles.bodySmall),
+          ),
+        ),
+        data: (workers) {
+          if (workers.isEmpty) {
+            return const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 40),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.location_searching,
+                          color: AppColors.textSecondary, size: 48),
+                      SizedBox(height: 12),
+                      Text('No workers match this filter',
+                          style: TextStyle(
+                              color: AppColors.textPrimary)),
+                      SizedBox(height: 4),
+                      Text(
+                          'Try a different category or turn off "Online only".',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13)),
+                    ],
                   ),
-                ),
-              );
-            }
-            return SliverPadding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) => _WorkerTile(worker: workers[i]),
-                  childCount: workers.length,
                 ),
               ),
             );
-          },
-        );
-      },
-    );
-  }
+          }
+          return SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (ctx, i) => _WorkerTile(worker: workers[i]),
+                childCount: workers.length,
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
 }
 
 // ── Location permission prompt ───────────────────────────────────
