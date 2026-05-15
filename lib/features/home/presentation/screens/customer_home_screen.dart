@@ -59,42 +59,46 @@ class CustomerHomeScreen extends ConsumerWidget {
                 // ── Quick actions ──────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: SizedBox(
-                      height: 96,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        children: [
-                          _QuickAction(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _QuickAction(
                             icon: Icons.add_circle_outline,
                             label: 'Post Job',
                             color: AppColors.neonCyan,
                             onTap: () => context.pushNamed('create-job'),
                           ),
-                          const SizedBox(width: 10),
-                          _QuickAction(
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickAction(
                             icon: Icons.work_outline,
                             label: 'My Jobs',
                             color: AppColors.neonPurple,
                             onTap: () => context.go('/customer/jobs'),
                           ),
-                          const SizedBox(width: 10),
-                          _QuickAction(
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickAction(
                             icon: Icons.chat_bubble_outline,
                             label: 'Messages',
                             color: AppColors.neonGreen,
                             onTap: () => context.pushNamed('conversations'),
                           ),
-                          const SizedBox(width: 10),
-                          _QuickAction(
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _QuickAction(
                             icon: Icons.workspace_premium,
                             label: 'Pro Pass',
                             color: AppColors.neonAmber,
                             onTap: () => context.pushNamed('propass'),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -641,38 +645,39 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 88,
-      child: GestureDetector(
-        onTap: onTap,
-        child: NeonCard(
-          margin: EdgeInsets.zero,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 20),
+    return GestureDetector(
+      onTap: onTap,
+      // Padding halved from the previous values (v:12/h:6 → v:6/h:3)
+      // so the card auto-fits the available column width from
+      // Expanded, including on small-width phones.
+      child: NeonCard(
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 3),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
               ),
-              const SizedBox(height: 6),
-              Text(
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
                 label,
                 style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 12,
                     fontWeight: FontWeight.w500),
-                textAlign: TextAlign.center,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
