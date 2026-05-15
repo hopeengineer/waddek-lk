@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:waddek_lk/core/providers/role_provider.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
-import 'package:waddek_lk/core/widgets/neon_button.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/core/widgets/rating_stars.dart';
@@ -20,7 +19,15 @@ class WorkerProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(currentProfileProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Profile')),
+      appBar: AppBar(
+        title: const Text('My Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: AppColors.neonCyan),
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
+      ),
       body: profileAsync.when(
         loading: () => const LoadingShimmer(),
         error: (e, _) => Center(child: Text('Error: $e')),
@@ -57,6 +64,16 @@ class WorkerProfileScreen extends ConsumerWidget {
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600)),
                         const SizedBox(height: 12),
+                        _actionTile(Icons.edit, 'Edit Profile',
+                            () => context.push('/profile/edit')),
+                        _actionTile(Icons.photo_library, 'Portfolio',
+                            () => context.push('/profile/portfolio')),
+                        _actionTile(Icons.category, 'My Skills',
+                            () => context.push('/profile/skills')),
+                        _actionTile(Icons.location_on, 'Update Location',
+                            () => context.push('/profile/location')),
+                        const Divider(
+                            color: AppColors.bgSurface, height: 16),
                         _actionTile(Icons.swap_horiz, 'Switch to Customer Mode', () {
                           ref.read(activeRoleProvider.notifier).switchRole('customer');
                           context.go('/customer/home');

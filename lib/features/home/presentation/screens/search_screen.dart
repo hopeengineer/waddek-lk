@@ -253,9 +253,7 @@ class _WorkerResultCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: NeonCard(
         child: InkWell(
-          // Worker detail screen not yet built — disable tap rather
-          // than show a button that does nothing.
-          onTap: null,
+          onTap: () => context.push('/workers/${worker.id}'),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(14),
@@ -355,6 +353,8 @@ class _WorkerResultCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                const Icon(Icons.chevron_right,
+                    color: AppColors.textSecondary, size: 20),
               ],
             ),
           ),

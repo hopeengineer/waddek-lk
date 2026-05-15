@@ -20,6 +20,25 @@ final categoriesProvider =
   return ref.read(profileRepositoryProvider).getAllCategories();
 });
 
+/// Fetch a specific worker's profile by id. Used by the worker detail
+/// screen. autoDispose so each navigation away frees the row.
+final workerProfileProvider = FutureProvider.autoDispose
+    .family<ProfileModel?, String>((ref, workerId) async {
+  return ref.read(profileRepositoryProvider).getProfile(workerId);
+});
+
+/// Worker's selected categories joined with category data.
+final workerSkillsProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, workerId) async {
+  return ref.read(profileRepositoryProvider).getWorkerCategories(workerId);
+});
+
+/// Worker's portfolio images.
+final workerPortfolioProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, workerId) async {
+  return ref.read(profileRepositoryProvider).getPortfolioImages(workerId);
+});
+
 /// Profile state management.
 class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
   ProfileNotifier(this._repo) : super(const AsyncValue.loading()) {

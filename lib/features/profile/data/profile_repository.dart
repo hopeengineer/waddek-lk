@@ -231,4 +231,12 @@ class ProfileRepository {
     });
     return url;
   }
+
+  /// Delete a portfolio image row. RLS limits this to the row's owner.
+  Future<void> deletePortfolioImage(String imageId) async {
+    await _client
+        .from(SupabaseConstants.portfolioImages)
+        .delete()
+        .eq('id', imageId);
+  }
 }

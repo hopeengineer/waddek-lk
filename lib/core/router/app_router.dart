@@ -14,6 +14,12 @@ import '../../features/auth/presentation/screens/registration_screen.dart';
 import '../../features/auth/presentation/screens/role_selection_screen.dart';
 import '../../features/home/presentation/screens/customer_home_screen.dart';
 import '../../features/profile/presentation/screens/customer_profile_screen.dart';
+import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/profile/presentation/screens/my_skills_screen.dart';
+import '../../features/profile/presentation/screens/portfolio_screen.dart';
+import '../../features/profile/presentation/screens/settings_screen.dart';
+import '../../features/profile/presentation/screens/update_location_screen.dart';
+import '../../features/profile/presentation/screens/worker_detail_screen.dart';
 import '../../features/profile/presentation/screens/worker_profile_screen.dart';
 import '../../features/profile/presentation/screens/worker_onboarding_screen.dart';
 import '../../features/jobs/presentation/screens/create_job_screen.dart';
@@ -223,6 +229,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'search',
         builder: (context, state) =>
             SearchScreen(initialCategoryId: state.extra as String?),
+      ),
+      GoRoute(
+        path: '/workers/:id',
+        name: 'worker-detail',
+        builder: (context, state) =>
+            WorkerDetailScreen(workerId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        name: 'edit-profile',
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/profile/portfolio',
+        name: 'portfolio',
+        builder: (context, state) => const PortfolioScreen(),
+      ),
+      GoRoute(
+        path: '/profile/skills',
+        name: 'my-skills',
+        builder: (context, state) => const MySkillsScreen(),
+      ),
+      GoRoute(
+        path: '/profile/location',
+        name: 'update-location',
+        builder: (context, state) => const UpdateLocationScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/jobs/create',
