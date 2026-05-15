@@ -232,8 +232,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final result = await _repo.login(identifier, password);
       final phone = result['phone'] as String? ?? identifier;
+      // If the server bypassed 2FA (dev whitelist), session is set
+      // already; treat as verified and skip the OTP screen.
+      final requires2fa = result['requires_2fa'] != false;
       state = state.copyWith(
-        flowState: AuthFlowState.awaiting2fa,
+        flowState: requires2fa
+            ? AuthFlowState.awaiting2fa
+            : AuthFlowState.verified,
         phone: phone,
         isLoading: false,
       );

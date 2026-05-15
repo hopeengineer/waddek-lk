@@ -9,6 +9,14 @@ import 'package:waddek_lk/core/utils/validators.dart';
 class AuthRepository {
   final SupabaseClient _client = SupabaseService.client;
 
+  /// Dev-only flag. When the build is launched with
+  /// `--dart-define=DEV_SKIP_2FA=true`, [login] calls
+  /// `auth.signInWithPassword` directly instead of the `login` edge
+  /// function, bypassing the OTP step. The production login flow on
+  /// the server is untouched.
+  static const _devSkip2fa =
+      bool.fromEnvironment('DEV_SKIP_2FA', defaultValue: false);
+
   /// Send OTP to the given phone number via the `send-otp` Edge Function.
   ///
   /// [context] can be `"signup"` (default) or `"login_2fa"`.
@@ -100,8 +108,16 @@ class AuthRepository {
 
   /// Log in with phone/email + password via `login` Edge Function.
   /// Returns the response data (includes `requires_2fa`, `phone`, `user_id`).
+  ///
+  /// When built with `--dart-define=DEV_SKIP_2FA=true`, we bypass the
+  /// edge function entirely and call `signInWithPassword` directly —
+  /// gives a session with no OTP. Server auth flow is untouched.
   Future<Map<String, dynamic>> login(
       String identifier, String password) async {
+    if (_devSkip2fa) {
+      return _devDirectSignIn(identifier, password);
+    }
+
     try {
       final response = await _client.functions.invoke(
         'login',
@@ -122,6 +138,35 @@ class AuthRepository {
         throw AuthException(details['error'] as String);
       }
       throw AuthException(e.reasonPhrase ?? 'Login failed');
+    }
+  }
+
+  /// Dev-only direct sign-in. Mirrors the email-derivation logic of
+  /// `login/index.ts:36-56` so phone-based identifiers map to the
+  /// same fake email used during signup.
+  Future<Map<String, dynamic>> _devDirectSignIn(
+      String identifier, String password) async {
+    final id = identifier.trim();
+    String email;
+    if (id.contains('@')) {
+      email = id.toLowerCase();
+    } else {
+      final normalized = Validators.normalizePhone(id);
+      final phoneWithoutPlus = normalized.replaceFirst('+', '');
+      email = 'phone_$phoneWithoutPlus@waddek.lk';
+    }
+    try {
+      final res = await _client.auth
+          .signInWithPassword(email: email, password: password);
+      return {
+        'requires_2fa': false,
+        'phone': res.user?.phone ?? '',
+        'user_id': res.user?.id ?? '',
+      };
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('Dev sign-in failed: $e');
     }
   }
 
