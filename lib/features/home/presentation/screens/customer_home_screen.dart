@@ -59,41 +59,46 @@ class CustomerHomeScreen extends ConsumerWidget {
                 // ── Quick actions ──────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                    child: Row(
-                      children: [
-                        _QuickAction(
-                          icon: Icons.add_circle_outline,
-                          label: 'Post Job',
-                          color: AppColors.neonCyan,
-                          onTap: () => context.pushNamed('create-job'),
-                        ),
-                        const SizedBox(width: 12),
-                        _QuickAction(
-                          icon: Icons.work_outline,
-                          label: 'My Jobs',
-                          color: AppColors.neonPurple,
-                          onTap: () => context.go('/customer/jobs'),
-                        ),
-                        const SizedBox(width: 12),
-                        _QuickAction(
-                          icon: Icons.chat_bubble_outline,
-                          label: 'Messages',
-                          color: AppColors.neonGreen,
-                          onTap: () => context.pushNamed('conversations'),
-                        ),
-                        const SizedBox(width: 12),
-                        _QuickAction(
-                          icon: Icons.workspace_premium,
-                          label: 'Pro Pass',
-                          color: AppColors.neonAmber,
-                          onTap: () => context.pushNamed('propass'),
-                        ),
-                      ],
+                    padding: const EdgeInsets.only(top: 20),
+                    child: SizedBox(
+                      height: 96,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        children: [
+                          _QuickAction(
+                            icon: Icons.add_circle_outline,
+                            label: 'Post Job',
+                            color: AppColors.neonCyan,
+                            onTap: () => context.pushNamed('create-job'),
+                          ),
+                          const SizedBox(width: 10),
+                          _QuickAction(
+                            icon: Icons.work_outline,
+                            label: 'My Jobs',
+                            color: AppColors.neonPurple,
+                            onTap: () => context.go('/customer/jobs'),
+                          ),
+                          const SizedBox(width: 10),
+                          _QuickAction(
+                            icon: Icons.chat_bubble_outline,
+                            label: 'Messages',
+                            color: AppColors.neonGreen,
+                            onTap: () => context.pushNamed('conversations'),
+                          ),
+                          const SizedBox(width: 10),
+                          _QuickAction(
+                            icon: Icons.workspace_premium,
+                            label: 'Pro Pass',
+                            color: AppColors.neonAmber,
+                            onTap: () => context.pushNamed('propass'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
                 // ── Discovery header + online toggle ───────────
                 SliverToBoxAdapter(
@@ -109,12 +114,17 @@ class CustomerHomeScreen extends ConsumerWidget {
                         Text('Online only',
                             style: AppTextStyles.bodySmall),
                         const SizedBox(width: 6),
-                        Switch.adaptive(
-                          value: onlineOnly,
-                          activeColor: AppColors.neonCyan,
-                          onChanged: (v) => ref
-                              .read(discoveryOnlineOnlyProvider.notifier)
-                              .state = v,
+                        Transform.scale(
+                          scale: 0.85,
+                          child: Switch.adaptive(
+                            value: onlineOnly,
+                            activeColor: AppColors.neonCyan,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            onChanged: (v) => ref
+                                .read(discoveryOnlineOnlyProvider.notifier)
+                                .state = v,
+                          ),
                         ),
                       ],
                     ),
@@ -631,13 +641,16 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return SizedBox(
+      width: 88,
       child: GestureDetector(
         onTap: onTap,
         child: NeonCard(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding:
+                const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -648,12 +661,16 @@ class _QuickAction extends StatelessWidget {
                   child: Icon(icon, color: color, size: 22),
                 ),
                 const SizedBox(height: 8),
-                Text(label,
-                    style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500),
-                    textAlign: TextAlign.center),
+                Text(
+                  label,
+                  style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
