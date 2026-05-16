@@ -139,7 +139,9 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
-                child: Column(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
@@ -262,6 +264,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                 const Spacer(flex: 2),
               ],
             ),
+                ),
               ),
             ),
           ),

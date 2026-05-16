@@ -55,7 +55,9 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
-                child: Form(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,6 +157,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
                 ],
               ),
             ),
+                ),
               ),
             ),
           ),

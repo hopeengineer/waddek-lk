@@ -63,7 +63,9 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
-              child: Form(
+              child: SizedBox(
+                width: double.infinity,
+                child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -141,6 +143,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
               ],
             ),
           ),
+              ),
             ),
           ),
         ),

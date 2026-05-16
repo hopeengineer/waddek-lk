@@ -56,7 +56,9 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
-                child: Column(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
               children: [
                 const Spacer(),
 
@@ -103,6 +105,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                 const SizedBox(height: 48),
               ],
             ),
+                ),
               ),
             ),
           ),

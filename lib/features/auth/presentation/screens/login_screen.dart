@@ -62,7 +62,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
-                child: Form(
+                child: SizedBox(
+                  // Force tight width = ConstrainedBox's max (480 on
+                  // desktop, viewport-48 on phones). Without this the
+                  // Column inside was free to widen to its children's
+                  // fill behaviour, defeating the ConstrainedBox cap.
+                  width: double.infinity,
+                  child: Form(
                   key: _formKey,
                   child: SizedBox(
                     height: MediaQuery.of(context).size.height -
@@ -246,6 +252,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
+              ),
               ),
             ),
           ),
