@@ -41,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final state = ref.read(authProvider);
       if (state.flowState == AuthFlowState.awaiting2fa) {
         // Navigate to OTP verify screen for 2FA
-        context.pushNamed('otp-verify-2fa', extra: state.phone ?? identifier);
+        context.pushNamed('otp-verify-2fa', extra: state.phone);
       }
     }
   }

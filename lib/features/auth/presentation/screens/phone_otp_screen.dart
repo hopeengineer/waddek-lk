@@ -117,15 +117,15 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
                     keyboardType: TextInputType.phone,
                     validator: Validators.phone,
                     style: AppTextStyles.bodyLarge,
-                    decoration: InputDecoration(
-                      prefixIcon: const Padding(
+                    decoration: const InputDecoration(
+                      prefixIcon: Padding(
                         padding: EdgeInsets.only(left: 16, right: 8),
                         child: Text(
                           '🇱🇰 +94',
                           style: TextStyle(fontSize: 16),
                         ),
                       ),
-                      prefixIconConstraints: const BoxConstraints(minWidth: 0),
+                      prefixIconConstraints: BoxConstraints(minWidth: 0),
                       hintText: '77 123 4567',
                     ),
                   ),
