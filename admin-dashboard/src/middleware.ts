@@ -3,6 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
+    // Root path on the admin domain → straight to admin login (or
+    // /admin if a valid session cookie is present). The Flutter app
+    // is served separately at waddek.lk, so the / page that
+    // bootstraps Flutter is no longer the right landing here.
+    if (pathname === "/") {
+        const session = request.cookies.get("admin_session");
+        const dest = session?.value ? "/admin" : "/admin/login";
+        return NextResponse.redirect(new URL(dest, request.url));
+    }
+
     // Only protect /admin routes
     if (!pathname.startsWith("/admin")) {
         return NextResponse.next();
@@ -32,5 +42,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/admin/:path*"],
+    matcher: ["/", "/admin/:path*"],
 };
