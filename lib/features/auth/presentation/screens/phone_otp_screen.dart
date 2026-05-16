@@ -52,7 +52,10 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Form(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,6 +153,8 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
 
                   const Spacer(flex: 3),
                 ],
+              ),
+            ),
               ),
             ),
           ),

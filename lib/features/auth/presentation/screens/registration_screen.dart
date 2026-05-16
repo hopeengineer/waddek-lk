@@ -76,7 +76,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Form(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,6 +289,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
                   const SizedBox(height: 32),
                 ],
+              ),
+            ),
               ),
             ),
           ),

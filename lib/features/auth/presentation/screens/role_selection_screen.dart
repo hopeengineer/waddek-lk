@@ -53,7 +53,10 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
               children: [
                 const Spacer(),
 
@@ -99,6 +102,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
                 const SizedBox(height: 48),
               ],
+            ),
+              ),
             ),
           ),
         ),

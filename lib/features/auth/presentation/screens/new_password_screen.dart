@@ -60,7 +60,10 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -136,6 +139,8 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                   onPressed: auth.isLoading ? null : _submit,
                 ),
               ],
+            ),
+          ),
             ),
           ),
         ),
