@@ -57,15 +57,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Form(
-              key: _formKey,
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height -
-                    MediaQuery.of(context).padding.top -
-                    MediaQuery.of(context).padding.bottom,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            // Centred + width-capped so inputs stay phone-shaped on
+            // desktop instead of stretching the full viewport.
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Form(
+                  key: _formKey,
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height -
+                        MediaQuery.of(context).padding.top -
+                        MediaQuery.of(context).padding.bottom,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                     const Spacer(flex: 2),
 
                     // Logo area
@@ -239,6 +244,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const Spacer(flex: 3),
                   ],
                 ),
+              ),
+            ),
               ),
             ),
           ),
