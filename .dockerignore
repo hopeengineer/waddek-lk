@@ -1,0 +1,41 @@
+# Used by the web-deploy/Dockerfile (Flutter web build). The
+# Dockerfile uses explicit COPYs so it never reads these paths, but
+# they'd still bloat the build context sent to the daemon.
+
+# Node modules anywhere
+**/node_modules
+
+# Flutter / Dart caches and build outputs
+.dart_tool
+.pub-cache
+.pub
+build
+web-deploy/public
+
+# Mobile native projects — irrelevant for the web build
+android
+ios
+macos
+linux
+windows
+
+# Source control + IDE
+.git
+.idea
+.vscode
+*.iml
+
+# Env files
+.env
+.env.local
+.env.production
+
+# Local Supabase + admin dashboard subprojects (web build doesn't need them)
+admin-dashboard
+supabase
+
+# Test + tooling
+test
+analysis_options.yaml.bak
+*.log
+.DS_Store
