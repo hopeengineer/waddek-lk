@@ -19,3 +19,12 @@ final messagesStreamProvider = StreamProvider.autoDispose
     .family<List<MessageModel>, String>((ref, conversationId) {
   return ref.read(chatRepositoryProvider).streamMessages(conversationId);
 });
+
+/// Single conversation detail (joined party + job). Used by the chat
+/// screen for the propose-job sheet (worker_id, customer_id) and the
+/// phone-reveal app-bar action (job.status).
+final conversationDetailProvider =
+    FutureProvider.autoDispose.family<ConversationModel?, String>(
+        (ref, conversationId) async {
+  return ref.read(chatRepositoryProvider).getConversation(conversationId);
+});

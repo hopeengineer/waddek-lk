@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,20 +32,60 @@ class _WorkerOnboardingScreenState
   final _nameCtrl = TextEditingController();
   final _bioCtrl = TextEditingController();
 
-  // Step 2: NIC
+  // Step 2: NIC — store bytes directly so this works on web too
+  // (dart:io.File throws on Flutter web; XFile.readAsBytes() doesn't).
   final _nicNumberCtrl = TextEditingController();
-  String? _nicFrontPath;
-  String? _nicBackPath;
+  Uint8List? _nicFrontBytes;
+  Uint8List? _nicBackBytes;
 
   // Step 3: Skills
   final Set<String> _selectedCategoryIds = {};
 
-  final _stepTitles = [
-    'Basic Info',
-    'Identity Verification',
-    'Select Your Skills',
-    'Set Your Location',
-  ];
+  /// Steps shown to the user. Verified users skip the in-app NIC step
+  /// since their identity is already on file from Shufti.
+  List<_OnboardingStep> _stepsFor({required bool isVerified}) {
+    return [
+      _OnboardingStep(
+          key: 'basicInfo',
+          title: 'Basic Info',
+          build: _buildBasicInfoStep),
+      if (!isVerified)
+        _OnboardingStep(
+            key: 'nic',
+            title: 'Identity Verification',
+            build: _buildNicStep),
+      _OnboardingStep(
+          key: 'skills',
+          title: 'Select Your Skills',
+          build: _buildSkillsStep),
+      _OnboardingStep(
+          key: 'location',
+          title: 'Set Your Location',
+          build: _buildLocationStep),
+    ];
+  }
+
+  bool get _isVerified =>
+      ref.read(currentProfileProvider).valueOrNull?.verificationStatus ==
+      'verified';
+
+  @override
+  void initState() {
+    super.initState();
+    // Seed name / bio from the existing profile so verified users don't
+    // have to retype what's already on their account. The name field
+    // becomes read-only for verified users (identity is locked).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = ref.read(currentProfileProvider).valueOrNull;
+      if (profile == null) return;
+      if (_nameCtrl.text.isEmpty && (profile.fullName?.isNotEmpty ?? false)) {
+        _nameCtrl.text = profile.fullName!;
+      }
+      if (_bioCtrl.text.isEmpty && (profile.bio?.isNotEmpty ?? false)) {
+        _bioCtrl.text = profile.bio!;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -56,9 +98,21 @@ class _WorkerOnboardingScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isVerified = ref
+            .watch(currentProfileProvider)
+            .valueOrNull
+            ?.verificationStatus ==
+        'verified';
+    final steps = _stepsFor(isVerified: isVerified);
+
+    // If verification status changed mid-session and the active index is
+    // now out of range, clamp it.
+    if (_currentStep >= steps.length) _currentStep = steps.length - 1;
+    final isLastStep = _currentStep == steps.length - 1;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Step ${_currentStep + 1} of 4'),
+        title: Text('Step ${_currentStep + 1} of ${steps.length}'),
         leading: _currentStep > 0
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -69,12 +123,12 @@ class _WorkerOnboardingScreenState
       body: Column(
         children: [
           // ── Progress Bar ──
-          _buildProgressBar(),
+          _buildProgressBar(steps.length),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              _stepTitles[_currentStep],
+              steps[_currentStep].title,
               style: const TextStyle(
                 color: AppColors.neonCyan,
                 fontSize: 20,
@@ -89,12 +143,7 @@ class _WorkerOnboardingScreenState
             child: PageView(
               controller: _pageCtrl,
               physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildBasicInfoStep(),
-                _buildNicStep(),
-                _buildSkillsStep(),
-                _buildLocationStep(),
-              ],
+              children: steps.map((s) => s.build()).toList(),
             ),
           ),
 
@@ -102,7 +151,7 @@ class _WorkerOnboardingScreenState
           Padding(
             padding: const EdgeInsets.all(20),
             child: NeonButton(
-              label: _currentStep == 3 ? 'Finish Setup' : 'Continue',
+              label: isLastStep ? 'Finish Setup' : 'Continue',
               isLoading: _saving,
               onPressed: _nextStep,
             ),
@@ -112,11 +161,11 @@ class _WorkerOnboardingScreenState
     );
   }
 
-  Widget _buildProgressBar() {
+  Widget _buildProgressBar(int total) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
-        children: List.generate(4, (i) {
+        children: List.generate(total, (i) {
           final isActive = i <= _currentStep;
           return Expanded(
             child: Container(
@@ -135,6 +184,9 @@ class _WorkerOnboardingScreenState
 
   // ── Step 1: Basic Info ──
   Widget _buildBasicInfoStep() {
+    final profile = ref.watch(currentProfileProvider).valueOrNull;
+    final isVerified = profile?.verificationStatus == 'verified';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -147,10 +199,25 @@ class _WorkerOnboardingScreenState
           const SizedBox(height: 20),
           TextField(
             controller: _nameCtrl,
-            style: const TextStyle(color: AppColors.textPrimary),
-            decoration: const InputDecoration(
+            readOnly: isVerified,
+            style: TextStyle(
+              color: isVerified
+                  ? AppColors.textSecondary
+                  : AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
               labelText: 'Full Name *',
-              prefixIcon: Icon(Icons.person, color: AppColors.neonCyan),
+              helperText: isVerified
+                  ? 'Locked — taken from your verified ID'
+                  : null,
+              helperStyle:
+                  const TextStyle(color: AppColors.neonPurple, fontSize: 11),
+              prefixIcon:
+                  const Icon(Icons.person, color: AppColors.neonCyan),
+              suffixIcon: isVerified
+                  ? const Icon(Icons.lock,
+                      color: AppColors.neonPurple, size: 18)
+                  : null,
             ),
           ),
           const SizedBox(height: 16),
@@ -193,14 +260,14 @@ class _WorkerOnboardingScreenState
           _buildUploadCard(
             label: 'NIC Front',
             icon: Icons.credit_card,
-            path: _nicFrontPath,
+            uploaded: _nicFrontBytes != null,
             onTap: () => _pickNicPhoto(true),
           ),
           const SizedBox(height: 12),
           _buildUploadCard(
             label: 'NIC Back',
             icon: Icons.credit_card,
-            path: _nicBackPath,
+            uploaded: _nicBackBytes != null,
             onTap: () => _pickNicPhoto(false),
           ),
           const SizedBox(height: 12),
@@ -230,7 +297,7 @@ class _WorkerOnboardingScreenState
   Widget _buildUploadCard({
     required String label,
     required IconData icon,
-    required String? path,
+    required bool uploaded,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -242,7 +309,7 @@ class _WorkerOnboardingScreenState
           child: Row(
             children: [
               Icon(icon,
-                  color: path != null ? AppColors.neonGreen : AppColors.neonCyan,
+                  color: uploaded ? AppColors.neonGreen : AppColors.neonCyan,
                   size: 28),
               const SizedBox(width: 16),
               Expanded(
@@ -253,9 +320,9 @@ class _WorkerOnboardingScreenState
                         style: const TextStyle(
                             color: AppColors.textPrimary, fontSize: 16)),
                     Text(
-                      path != null ? 'Photo selected' : 'Tap to upload',
+                      uploaded ? 'Photo selected' : 'Tap to upload',
                       style: TextStyle(
-                        color: path != null
+                        color: uploaded
                             ? AppColors.neonGreen
                             : AppColors.textSecondary,
                         fontSize: 12,
@@ -396,17 +463,20 @@ class _WorkerOnboardingScreenState
   // ── Navigation ──
 
   void _nextStep() async {
+    final steps = _stepsFor(isVerified: _isVerified);
+    final currentKey = steps[_currentStep].key;
+
     // Validate current step
-    if (_currentStep == 0 && _nameCtrl.text.trim().isEmpty) {
+    if (currentKey == 'basicInfo' && _nameCtrl.text.trim().isEmpty) {
       _showError('Please enter your name');
       return;
     }
-    if (_currentStep == 2 && _selectedCategoryIds.isEmpty) {
+    if (currentKey == 'skills' && _selectedCategoryIds.isEmpty) {
       _showError('Please select at least one skill');
       return;
     }
 
-    if (_currentStep < 3) {
+    if (_currentStep < steps.length - 1) {
       setState(() => _currentStep++);
       _pageCtrl.animateToPage(
         _currentStep,
@@ -435,19 +505,24 @@ class _WorkerOnboardingScreenState
     try {
       final notifier = ref.read(currentProfileProvider.notifier);
 
-      // Update basic info
+      // Update basic info + promote to worker. Setting role='worker'
+      // here means subsequent role toggles recognise the user as a
+      // registered worker and skip onboarding (verified users complete
+      // a NIC-less flow, so we can't rely on nic_number as the
+      // "onboarded" signal).
       await notifier.updateProfile({
+        'role': 'worker',
         'full_name': _nameCtrl.text.trim(),
         if (_bioCtrl.text.isNotEmpty) 'bio': _bioCtrl.text.trim(),
       });
 
       // Upload NIC if provided
-      if (_nicFrontPath != null &&
-          _nicBackPath != null &&
+      if (_nicFrontBytes != null &&
+          _nicBackBytes != null &&
           _nicNumberCtrl.text.isNotEmpty) {
         await notifier.uploadNic(
-          frontPath: _nicFrontPath!,
-          backPath: _nicBackPath!,
+          frontBytes: _nicFrontBytes!,
+          backBytes: _nicBackBytes!,
           nicNumber: _nicNumberCtrl.text.trim(),
         );
       }
@@ -505,11 +580,12 @@ class _WorkerOnboardingScreenState
       maxWidth: 1200,
     );
     if (picked != null) {
+      final bytes = await picked.readAsBytes();
       setState(() {
         if (isFront) {
-          _nicFrontPath = picked.path;
+          _nicFrontBytes = bytes;
         } else {
-          _nicBackPath = picked.path;
+          _nicBackBytes = bytes;
         }
       });
     }
@@ -521,4 +597,17 @@ class _WorkerOnboardingScreenState
           content: Text(message), backgroundColor: AppColors.neonRed),
     );
   }
+}
+
+/// One step in the worker onboarding wizard.
+class _OnboardingStep {
+  const _OnboardingStep({
+    required this.key,
+    required this.title,
+    required this.build,
+  });
+
+  final String key;
+  final String title;
+  final Widget Function() build;
 }

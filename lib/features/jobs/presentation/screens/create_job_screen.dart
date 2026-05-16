@@ -4,11 +4,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:waddek_lk/core/services/places_service.dart';
 import 'package:waddek_lk/core/theme/app_colors.dart';
+import 'package:waddek_lk/core/widgets/address_lookup_field.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/features/profile/presentation/providers/profile_provider.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 import '../providers/jobs_provider.dart';
 
 /// Customer: create a new job request.
@@ -47,22 +50,30 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final profileAsync = ref.watch(currentProfileProvider);
+    final profile = profileAsync.valueOrNull;
+    final isVerified = profile?.verificationStatus == 'verified';
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Post a Job')),
-      body: SingleChildScrollView(
+      appBar: AppBar(title: Text(l10n.postJob)),
+      body: profileAsync.isLoading
+          ? const LoadingShimmer()
+          : !isVerified
+              ? _VerifyToPostGate(status: profile?.verificationStatus)
+              : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Category ──
-            const Text('Category *',
-                style: TextStyle(
+            Text('${l10n.category} *',
+                style: const TextStyle(
                     color: AppColors.neonCyan, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             categoriesAsync.when(
               loading: () => const LoadingShimmer(),
-              error: (e, _) => Text('Error: $e'),
+              error: (e, _) => Text('${l10n.error}: $e'),
               data: (cats) => Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -95,10 +106,10 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
             TextField(
               controller: _titleCtrl,
               style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'Job Title *',
-                hintText: 'e.g. Fix leaking tap in kitchen',
-                prefixIcon: Icon(Icons.work, color: AppColors.neonCyan),
+              decoration: InputDecoration(
+                labelText: '${l10n.jobTitle} *',
+                hintText: l10n.jobTitleHint,
+                prefixIcon: const Icon(Icons.work, color: AppColors.neonCyan),
               ),
             ),
             const SizedBox(height: 16),
@@ -108,11 +119,11 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
               controller: _descCtrl,
               style: const TextStyle(color: AppColors.textPrimary),
               maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                hintText: 'Describe the job in detail...',
+              decoration: InputDecoration(
+                labelText: l10n.descriptionOptional,
+                hintText: l10n.descriptionHint,
                 prefixIcon:
-                    Icon(Icons.description, color: AppColors.neonCyan),
+                    const Icon(Icons.description, color: AppColors.neonCyan),
               ),
             ),
             const SizedBox(height: 16),
@@ -125,10 +136,10 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                     controller: _budgetMinCtrl,
                     style: const TextStyle(color: AppColors.textPrimary),
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Min Budget (Rs.)',
-                      prefixIcon:
-                          Icon(Icons.money, color: AppColors.neonCyan),
+                    decoration: InputDecoration(
+                      labelText: l10n.minBudget,
+                      prefixIcon: const Icon(Icons.money,
+                          color: AppColors.neonCyan),
                     ),
                   ),
                 ),
@@ -138,10 +149,10 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                     controller: _budgetMaxCtrl,
                     style: const TextStyle(color: AppColors.textPrimary),
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Max Budget (Rs.)',
-                      prefixIcon:
-                          Icon(Icons.money, color: AppColors.neonCyan),
+                    decoration: InputDecoration(
+                      labelText: l10n.maxBudget,
+                      prefixIcon: const Icon(Icons.money,
+                          color: AppColors.neonCyan),
                     ),
                   ),
                 ),
@@ -150,15 +161,16 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
             const SizedBox(height: 16),
 
             // ── Address ──
-            TextField(
+            AddressLookupField(
               controller: _addressCtrl,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'Address',
-                hintText: 'Where is the job?',
-                prefixIcon:
-                    Icon(Icons.location_on, color: AppColors.neonCyan),
-              ),
+              label: l10n.address,
+              hint: l10n.addressHint,
+              onSelected: (addr, lat, lng) {
+                setState(() {
+                  _lat = lat;
+                  _lng = lng;
+                });
+              },
             ),
             const SizedBox(height: 8),
             TextButton.icon(
@@ -171,8 +183,8 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                     )
                   : const Icon(Icons.my_location,
                       color: AppColors.neonCyan, size: 18),
-              label: const Text('Use current location',
-                  style: TextStyle(color: AppColors.neonCyan)),
+              label: Text(l10n.useCurrentLocation,
+                  style: const TextStyle(color: AppColors.neonCyan)),
               onPressed: _locating ? null : _useCurrentLocation,
             ),
             const SizedBox(height: 24),
@@ -191,8 +203,8 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                       const SizedBox(width: 12),
                       Text(
                         _photos.isEmpty
-                            ? 'Add Photos (optional)'
-                            : '${_photos.length} photo${_photos.length == 1 ? '' : 's'} attached',
+                            ? l10n.addPhotosOptional
+                            : l10n.photosAttached(_photos.length),
                         style: const TextStyle(
                             color: AppColors.textSecondary),
                       ),
@@ -205,7 +217,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
 
             // ── Submit ──
             NeonButton(
-              label: 'Post Job',
+              label: l10n.postJob,
               isLoading: _saving,
               onPressed: _submitJob,
             ),
@@ -215,13 +227,16 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     );
   }
 
+
+
   Future<void> _submitJob() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_selectedCategoryId == null) {
-      _showError('Please select a category');
+      _showError(l10n.selectCategory);
       return;
     }
     if (_titleCtrl.text.trim().isEmpty) {
-      _showError('Please enter a title');
+      _showError(l10n.enterTitle);
       return;
     }
 
@@ -229,7 +244,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     try {
       final profile = ref.read(currentProfileProvider).valueOrNull;
       if (profile == null) {
-        _showError('Profile not loaded');
+        _showError(l10n.profileNotLoaded);
         return;
       }
 
@@ -262,8 +277,8 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Job posted.'),
+          SnackBar(
+            content: Text(l10n.jobPosted),
             backgroundColor: AppColors.neonGreen,
           ),
         );
@@ -277,6 +292,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
   }
 
   Future<void> _useCurrentLocation() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _locating = true);
     try {
       LocationPermission perm = await Geolocator.checkPermission();
@@ -285,27 +301,34 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
       }
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) {
-        _showError('Location permission denied');
+        _showError(l10n.locationPermissionDenied);
         return;
       }
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
       );
+      final address =
+          await PlacesService.reverseGeocode(pos.latitude, pos.longitude);
       setState(() {
         _lat = pos.latitude;
         _lng = pos.longitude;
+        if (address != null && address.isNotEmpty) {
+          _addressCtrl.text = address;
+        }
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Location set.'),
+          SnackBar(
+            content: Text(l10n.locationSet),
             backgroundColor: AppColors.neonGreen,
           ),
         );
       }
     } catch (e) {
-      _showError('Could not get location: $e');
+      _showError('${l10n.error}: $e');
     } finally {
       if (mounted) setState(() => _locating = false);
     }
@@ -327,6 +350,67 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppColors.neonRed),
+    );
+  }
+}
+
+/// Verification gate shown in place of the job form for unverified users.
+class _VerifyToPostGate extends StatelessWidget {
+  const _VerifyToPostGate({required this.status});
+  final String? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPending = status == 'pending';
+    final isDuplicate = status == 'duplicate_detected';
+
+    final headline = isPending
+        ? 'Verification in progress'
+        : isDuplicate
+            ? 'Existing account detected'
+            : 'Verify your identity to post a job';
+    final body = isPending
+        ? 'Finish the verification step in your browser tab. Once it clears, you can post jobs.'
+        : isDuplicate
+            ? 'Your ID is already linked to another account. Recover it to continue.'
+            : 'We ask every customer to verify once. It takes about a minute and keeps the marketplace safe for workers.';
+    final ctaLabel = isDuplicate ? 'Recover account' : 'Verify identity';
+    final ctaRoute = isDuplicate ? 'duplicate-recovery' : 'verification';
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: NeonCard(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.shield_outlined,
+                    size: 56, color: AppColors.neonAmber),
+                const SizedBox(height: 16),
+                Text(headline,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Text(body,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: AppColors.textSecondary, fontSize: 13)),
+                const SizedBox(height: 20),
+                NeonButton(
+                  label: ctaLabel,
+                  icon: Icons.videocam,
+                  onPressed: () => context.pushNamed(ctaRoute),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

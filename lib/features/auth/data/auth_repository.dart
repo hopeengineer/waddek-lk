@@ -94,15 +94,28 @@ class AuthRepository {
   }
 
   /// Set the user's role (customer or worker) during onboarding.
+  ///
+  /// Also carries the auth.users email through to the profile row.
+  /// Without this, an upsert that runs before `register()` overwrites
+  /// the row with `email = null`, leaving manually-created users
+  /// (dashboard signups, recovery flows) without an email on their
+  /// profile even though one is set on auth.users.
   Future<void> setRole(String role) async {
     final userId = SupabaseService.currentUserId;
     if (userId == null) throw const AuthException('Not authenticated');
+
+    final authEmail = _client.auth.currentUser?.email;
+    // Skip the synthetic phone-OTP placeholder emails so we don't
+    // pollute profiles.email with them.
+    final isSyntheticEmail = authEmail != null &&
+        RegExp(r'^phone_\d+@waddek\.lk$').hasMatch(authEmail);
 
     await _client.from(SupabaseConstants.profiles).upsert({
       'id': userId,
       'role': role,
       'active_role': role,
       'phone': _client.auth.currentUser?.phone ?? '',
+      if (authEmail != null && !isSyntheticEmail) 'email': authEmail,
     });
   }
 

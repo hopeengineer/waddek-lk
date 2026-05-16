@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
@@ -6,6 +7,7 @@ import 'package:waddek_lk/core/widgets/neon_button.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/core/widgets/rating_stars.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 import '../providers/jobs_provider.dart';
 import '../../domain/bid_model.dart';
 
@@ -25,9 +27,10 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
   Widget build(BuildContext context) {
     final repo = ref.read(jobsRepositoryProvider);
     final bidsAsync = ref.watch(jobBidsProvider(widget.jobId));
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Job Details')),
+      appBar: AppBar(title: Text(l10n.jobDetails)),
       body: FutureBuilder(
         future: repo.getJob(widget.jobId),
         builder: (context, snapshot) {
@@ -36,13 +39,13 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
           }
           final job = snapshot.data;
           if (job == null) {
-            return const Center(child: Text('Job not found'));
+            return Center(child: Text(l10n.jobNotFound));
           }
 
           final categoryName =
-              job.categoryData?['name_en'] as String? ?? 'Unknown';
+              job.categoryData?['name_en'] as String? ?? l10n.unknown;
           final customerName =
-              job.customerData?['full_name'] as String? ?? 'Customer';
+              job.customerData?['full_name'] as String? ?? l10n.customer;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -63,9 +66,53 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text('by $customerName',
-                    style: const TextStyle(
-                        color: AppColors.textSecondary, fontSize: 14)),
+                Row(
+                  children: [
+                    Text(l10n.byCustomer(customerName),
+                        style: const TextStyle(
+                            color: AppColors.textSecondary, fontSize: 14)),
+                    // Phone reveal — visible only when RLS lets the
+                    // join hand us a phone (i.e. the caller is the
+                    // matched counterparty on this job).
+                    Builder(builder: (ctx) {
+                      final phone =
+                          job.customerData?['phone'] as String?;
+                      if (phone == null || phone.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: InkWell(
+                          onTap: () {
+                            Clipboard.setData(
+                                ClipboardData(text: phone));
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text('Phone copied: $phone')),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.phone,
+                                    color: AppColors.neonGreen,
+                                    size: 14),
+                                const SizedBox(width: 4),
+                                Text(phone,
+                                    style: const TextStyle(
+                                        color: AppColors.neonGreen,
+                                        fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
                 const SizedBox(height: 16),
 
                 // ── Info Cards ──
@@ -74,24 +121,24 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        _detailRow(Icons.category, 'Category', categoryName),
+                        _detailRow(Icons.category, l10n.category, categoryName),
                         const Divider(color: AppColors.bgSurface, height: 20),
                         if (job.address != null)
                           _detailRow(
-                              Icons.location_on, 'Location', job.address!),
+                              Icons.location_on, l10n.address, job.address!),
                         if (job.budgetMin != null || job.budgetMax != null) ...[
                           const Divider(
                               color: AppColors.bgSurface, height: 20),
                           _detailRow(
                             Icons.money,
-                            'Budget',
+                            l10n.budget,
                             _budgetText(job.budgetMin, job.budgetMax),
                           ),
                         ],
                         if (job.scheduledAt != null) ...[
                           const Divider(
                               color: AppColors.bgSurface, height: 20),
-                          _detailRow(Icons.calendar_today, 'Scheduled',
+                          _detailRow(Icons.calendar_today, l10n.scheduled,
                               job.scheduledAt!.toString().split(' ').first),
                         ],
                       ],
@@ -108,8 +155,8 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Description',
-                              style: TextStyle(
+                          Text(l10n.description,
+                              style: const TextStyle(
                                   color: AppColors.neonCyan,
                                   fontWeight: FontWeight.w600)),
                           const SizedBox(height: 8),
@@ -126,7 +173,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                 if (job.status == 'draft') ...[
                   const SizedBox(height: 24),
                   NeonButton(
-                    label: 'Broadcast to Workers',
+                    label: l10n.broadcastToWorkers,
                     icon: Icons.broadcast_on_personal,
                     isLoading: _broadcasting,
                     onPressed: () => _broadcastJob(job.id),
@@ -135,8 +182,8 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
 
                 // ── Bids Section ──
                 const SizedBox(height: 24),
-                const Text('Bids',
-                    style: TextStyle(
+                Text(l10n.bids,
+                    style: const TextStyle(
                         color: AppColors.neonCyan,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
@@ -144,23 +191,23 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
 
                 bidsAsync.when(
                   loading: () => const LoadingShimmer(),
-                  error: (e, _) => Text('Error: $e'),
+                  error: (e, _) => Text('${l10n.error}: $e'),
                   data: (bids) {
                     if (bids.isEmpty) {
                       return NeonCard(
                         child: Padding(
                           padding: const EdgeInsets.all(24),
                           child: Column(
-                            children: const [
-                              Icon(Icons.hourglass_empty,
+                            children: [
+                              const Icon(Icons.hourglass_empty,
                                   color: AppColors.textSecondary, size: 36),
-                              SizedBox(height: 8),
-                              Text('No bids yet',
-                                  style: TextStyle(
+                              const SizedBox(height: 8),
+                              Text(l10n.noBidsYet,
+                                  style: const TextStyle(
                                       color: AppColors.textSecondary)),
-                              SizedBox(height: 4),
-                              Text('Workers will bid once you broadcast',
-                                  style: TextStyle(
+                              const SizedBox(height: 4),
+                              Text(l10n.workersWillBid,
+                                  style: const TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 12)),
                             ],

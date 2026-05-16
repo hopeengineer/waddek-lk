@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/neon_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// Role selection screen — shown after first-time OTP verification.
@@ -44,6 +45,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
@@ -54,10 +57,10 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
               children: [
                 const Spacer(),
 
-                Text('I want to…', style: AppTextStyles.h2),
+                Text(l10n.iWantTo, style: AppTextStyles.h2),
                 const SizedBox(height: 8),
                 Text(
-                  'Choose how you\'ll use Waddek',
+                  l10n.chooseRole,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -67,8 +70,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
                 // Customer card
                 _RoleCard(
-                  title: 'Find skilled workers',
-                  subtitle: 'Post jobs, get quotes, hire nearby workers',
+                  title: l10n.findWorkers,
+                  subtitle: l10n.findWorkersDesc,
                   icon: Icons.search_rounded,
                   isSelected: _selectedRole == 'customer',
                   onTap: () => setState(() => _selectedRole = 'customer'),
@@ -78,8 +81,8 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
 
                 // Worker card
                 _RoleCard(
-                  title: 'Offer my services',
-                  subtitle: 'Get job leads, place bids, earn money',
+                  title: l10n.offerServices,
+                  subtitle: l10n.offerServicesDesc,
                   icon: Icons.construction_rounded,
                   isSelected: _selectedRole == 'worker',
                   glowColor: AppColors.neonPurple,
@@ -89,7 +92,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                 const Spacer(),
 
                 NeonButton(
-                  label: 'Continue',
+                  label: l10n.continueBtn,
                   onPressed: _selectedRole != null ? _continue : null,
                   isLoading: _isLoading,
                 ),

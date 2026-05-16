@@ -8,6 +8,7 @@ import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/features/profile/presentation/providers/profile_provider.dart';
 import 'package:waddek_lk/features/subscription/presentation/providers/subscription_provider.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 import '../providers/wallet_provider.dart';
 
 /// Wallet overview screen — balance, top-up, Pro Pass upsell.
@@ -21,9 +22,10 @@ class WalletScreen extends ConsumerWidget {
 
     final walletAsync = ref.watch(walletStreamProvider(profile.id));
     final subAsync = ref.watch(subscriptionStreamProvider(profile.id));
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Waddek Wallet')),
+      appBar: AppBar(title: Text(l10n.walletTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -31,7 +33,7 @@ class WalletScreen extends ConsumerWidget {
             // ── Balance Card ──
             walletAsync.when(
               loading: () => const LoadingShimmer(),
-              error: (e, _) => Text('Error: $e'),
+              error: (e, _) => Text('${l10n.error}: $e'),
               data: (wallet) => _BalanceCard(
                 balance: wallet?.balance ?? 0,
                 onTopUp: () => context.push('/wallet/topup'),
@@ -63,8 +65,8 @@ class WalletScreen extends ConsumerWidget {
               child: ListTile(
                 leading:
                     const Icon(Icons.receipt_long, color: AppColors.neonCyan),
-                title: const Text('Transaction History',
-                    style: TextStyle(color: AppColors.textPrimary)),
+                title: Text(l10n.transactionHistory,
+                    style: const TextStyle(color: AppColors.textPrimary)),
                 trailing: const Icon(Icons.chevron_right,
                     color: AppColors.textSecondary),
                 onTap: () => context.push('/wallet/transactions'),
@@ -85,6 +87,7 @@ class _BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -101,8 +104,9 @@ class _BalanceCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Text('Available Balance',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+          Text(l10n.availableBalance,
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 14)),
           const SizedBox(height: 8),
           Text(
             'Rs. ${balance.toStringAsFixed(0)}',
@@ -114,7 +118,7 @@ class _BalanceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          NeonButton(label: 'Top Up', onPressed: onTopUp),
+          NeonButton(label: l10n.topUp, onPressed: onTopUp),
         ],
       ),
     );
@@ -134,6 +138,7 @@ class _ProPassActiveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final daysLeft = periodEnd != null
         ? periodEnd!.difference(DateTime.now()).inDays
         : 0;
@@ -148,8 +153,8 @@ class _ProPassActiveCard extends StatelessWidget {
                 const Icon(Icons.workspace_premium,
                     color: AppColors.neonCyan, size: 22),
                 const SizedBox(width: 8),
-                const Text('Waddek Pro Pass',
-                    style: TextStyle(
+                Text(l10n.proPass,
+                    style: const TextStyle(
                         color: AppColors.neonCyan,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
@@ -162,7 +167,7 @@ class _ProPassActiveCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    cancelledAt != null ? 'CANCELLING' : 'ACTIVE',
+                    cancelledAt != null ? l10n.cancelling : l10n.active,
                     style: TextStyle(
                       color: cancelledAt != null
                           ? AppColors.neonAmber
@@ -178,15 +183,15 @@ class _ProPassActiveCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _statColumn('Unlocks Used', '$unlocksUsed / 50'),
-                _statColumn('Days Left', '$daysLeft'),
+                _statColumn(l10n.unlocksUsed, '$unlocksUsed / 50'),
+                _statColumn(l10n.daysLeft, '$daysLeft'),
               ],
             ),
             if (cancelledAt != null) ...[
               const SizedBox(height: 8),
-              const Text(
-                'Benefits active until period end.',
-                style: TextStyle(
+              Text(
+                l10n.benefitsActiveUntil,
+                style: const TextStyle(
                     color: AppColors.textSecondary, fontSize: 12),
               ),
             ],
@@ -219,20 +224,21 @@ class _ProPassUpsellCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return NeonCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Row(
-              children: const [
-                Icon(Icons.workspace_premium,
+              children: [
+                const Icon(Icons.workspace_premium,
                     color: AppColors.neonAmber, size: 22),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Upgrade to Pro Pass',
-                    style: TextStyle(
+                    l10n.upgradeToProPass,
+                    style: const TextStyle(
                         color: AppColors.neonCyan,
                         fontSize: 16,
                         fontWeight: FontWeight.w600),
@@ -241,14 +247,15 @@ class _ProPassUpsellCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Zero lead fees • Priority ranking • Verified badge\nAll for Rs. 1,500/month',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            Text(
+              l10n.proPassUpsellDesc,
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             NeonButton(
-              label: 'Learn More',
+              label: l10n.learnMore,
               onPressed: onUpgrade,
             ),
           ],

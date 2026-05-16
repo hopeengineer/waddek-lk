@@ -7,6 +7,7 @@ import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/features/profile/presentation/providers/profile_provider.dart';
 import 'package:waddek_lk/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:waddek_lk/features/notifications/domain/notification_model.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 
 /// Notifications screen — realtime feed with mark-all-read.
 class NotificationsScreen extends ConsumerWidget {
@@ -19,10 +20,11 @@ class NotificationsScreen extends ConsumerWidget {
 
     final notifsAsync =
         ref.watch(notificationsStreamProvider(profile.id));
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(l10n.notifications),
         actions: [
           TextButton(
             onPressed: () {
@@ -30,29 +32,30 @@ class NotificationsScreen extends ConsumerWidget {
                   .read(notificationsRepositoryProvider)
                   .markAllAsRead();
             },
-            child: const Text('Mark all read',
-                style: TextStyle(color: AppColors.neonCyan, fontSize: 12)),
+            child: Text(l10n.markAllRead,
+                style: const TextStyle(
+                    color: AppColors.neonCyan, fontSize: 12)),
           ),
         ],
       ),
       body: notifsAsync.when(
         loading: () => const LoadingShimmer(),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${l10n.error}: $e')),
         data: (notifications) {
           if (notifications.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.notifications_none,
+                children: [
+                  const Icon(Icons.notifications_none,
                       color: AppColors.textSecondary, size: 64),
-                  SizedBox(height: 16),
-                  Text('No notifications yet',
-                      style: TextStyle(
+                  const SizedBox(height: 16),
+                  Text(l10n.noNotificationsYet,
+                      style: const TextStyle(
                           color: AppColors.textPrimary, fontSize: 18)),
-                  SizedBox(height: 4),
-                  Text('We\'ll notify you when something happens',
-                      style: TextStyle(
+                  const SizedBox(height: 4),
+                  Text(l10n.wellNotifyYou,
+                      style: const TextStyle(
                           color: AppColors.textSecondary, fontSize: 13)),
                 ],
               ),
@@ -129,14 +132,23 @@ class _NotificationTile extends StatelessWidget {
           backgroundColor: color.withOpacity(0.15),
           child: Icon(icon, color: color, size: 20),
         ),
-        title: Text(
-          notification.title,
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight:
-                notification.isRead ? FontWeight.normal : FontWeight.w600,
-            fontSize: 14,
-          ),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                notification.title,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: notification.isRead
+                      ? FontWeight.normal
+                      : FontWeight.w600,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            ..._roleChipFor(notification.type),
+          ],
         ),
         subtitle: notification.body != null
             ? Text(
@@ -215,5 +227,49 @@ class _NotificationTile extends StatelessWidget {
     if (diff.inHours < 24) return '${diff.inHours}h';
     if (diff.inDays < 7) return '${diff.inDays}d';
     return '${dt.day}/${dt.month}';
+  }
+
+  /// Return a role chip widget (wrapped in a leading spacer) for types
+  /// we can confidently classify. Ambiguous types get no chip.
+  List<Widget> _roleChipFor(String type) {
+    switch (type) {
+      case 'new_job':
+      case 'bid_accepted':
+      case 'subscription':
+        return [
+          const SizedBox(width: 6),
+          const _RoleChip(label: 'Waddek', color: AppColors.neonGreen),
+        ];
+      default:
+        return const [];
+    }
+  }
+}
+
+/// Tiny pill showing which side of an interaction this item belongs to.
+class _RoleChip extends StatelessWidget {
+  const _RoleChip({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.35), width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
   }
 }

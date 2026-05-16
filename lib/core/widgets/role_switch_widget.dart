@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../providers/role_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../../features/profile/presentation/providers/profile_provider.dart';
+import '../../l10n/app_localizations.dart';
 
 /// A compact role toggle widget for switching between Customer and Worker modes.
 ///
@@ -58,18 +60,11 @@ class RoleSwitchWidget extends ConsumerWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              isWorker ? 'Worker' : 'Customer',
+              isWorker ? 'Waddek' : 'Customer',
               style: AppTextStyles.labelMedium.copyWith(
                 color: isWorker ? AppColors.neonGreen : AppColors.neonCyan,
                 fontWeight: FontWeight.w600,
               ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.swap_horiz,
-              color: (isWorker ? AppColors.neonGreen : AppColors.neonCyan)
-                  .withOpacity(0.6),
-              size: 14,
             ),
           ],
         ),
@@ -78,12 +73,38 @@ class RoleSwitchWidget extends ConsumerWidget {
   }
 
   void _handleSwitch(BuildContext context, WidgetRef ref, bool isCurrentlyWorker) {
+    // For role flips between customer and worker, we DON'T do an
+    // explicit context.go — the router's refreshListenable watches
+    // activeRoleProvider and auto-redirects from a stale shell route
+    // (e.g. /customer/home with role=worker) to the new role's home
+    // (/worker/jobs). Doing both caused two near-simultaneous
+    // navigations with different pageKeys, which restarted the fade
+    // transition mid-flight and showed as a half-second flicker.
     if (isCurrentlyWorker) {
-      // Worker → Customer: one-click (workers are already verified)
+      // Worker → Customer: just flip the role; router handles the rest.
       ref.read(activeRoleProvider.notifier).switchRole('customer');
-      context.go('/customer/home');
+      return;
+    }
+
+    // Customer → Worker — three branches:
+    //   1. Already registered as a worker → flip role, router redirects.
+    //   2. ID-verified but never onboarded → straight to onboarding.
+    //   3. Not verified yet → show the "Become a Worker" intro sheet.
+    final profile = ref.read(currentProfileProvider).valueOrNull;
+    if (profile == null) {
+      _showWorkerActivationDialog(context, ref);
+      return;
+    }
+
+    final isRegisteredWorker =
+        profile.role == 'worker' || profile.nicNumber != null;
+    final isVerified = profile.verificationStatus == 'verified';
+
+    if (isRegisteredWorker) {
+      ref.read(activeRoleProvider.notifier).switchRole('worker');
+    } else if (isVerified) {
+      context.pushNamed('worker-onboarding');
     } else {
-      // Customer → Worker: check if they have worker verification
       _showWorkerActivationDialog(context, ref);
     }
   }
@@ -95,66 +116,70 @@ class RoleSwitchWidget extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textDisabled,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Icon(Icons.construction, color: AppColors.neonGreen, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'Become a Worker',
-              style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'To offer services on Waddek, you need to complete worker verification including NIC upload and skill selection.',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  context.pushNamed('worker-onboarding');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.neonGreen,
-                  foregroundColor: AppColors.scaffoldDark,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textDisabled,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                child: Text('Start Verification',
-                    style: AppTextStyles.button
-                        .copyWith(color: AppColors.scaffoldDark)),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Not Now',
-                  style: TextStyle(color: AppColors.textSecondary)),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+              const SizedBox(height: 24),
+              const Icon(Icons.construction,
+                  color: AppColors.neonGreen, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                l10n.becomeAWorker,
+                style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.workerActivationDesc,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.pushNamed('worker-onboarding');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.neonGreen,
+                    foregroundColor: AppColors.scaffoldDark,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(l10n.startVerification,
+                      style: AppTextStyles.button
+                          .copyWith(color: AppColors.scaffoldDark)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(l10n.notNow,
+                    style: const TextStyle(color: AppColors.textSecondary)),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 }

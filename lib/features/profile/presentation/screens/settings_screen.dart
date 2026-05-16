@@ -6,6 +6,7 @@ import 'package:waddek_lk/core/providers/locale_provider.dart';
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/features/auth/presentation/providers/auth_provider.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 
 /// Account / app settings. Language picker and logout for now —
 /// notification preferences and account deletion can hang off this.
@@ -15,13 +16,14 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _sectionHeader('Language'),
+          _sectionHeader(l10n.language),
           NeonCard(
             child: Column(
               children: [
@@ -36,28 +38,28 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _sectionHeader('Account'),
+          _sectionHeader(l10n.account),
           NeonCard(
             child: ListTile(
               leading: const Icon(Icons.logout, color: AppColors.neonRed),
-              title: const Text('Log out',
-                  style: TextStyle(
+              title: Text(l10n.logOut,
+                  style: const TextStyle(
                       color: AppColors.neonRed,
                       fontWeight: FontWeight.w600)),
               onTap: () => _confirmLogout(context, ref),
             ),
           ),
           const SizedBox(height: 24),
-          _sectionHeader('About'),
+          _sectionHeader(l10n.about),
           NeonCard(
             child: Column(
-              children: const [
+              children: [
                 ListTile(
-                  leading:
-                      Icon(Icons.info_outline, color: AppColors.neonCyan),
-                  title: Text('Version',
-                      style: TextStyle(color: AppColors.textPrimary)),
-                  trailing: Text('1.0.0',
+                  leading: const Icon(Icons.info_outline,
+                      color: AppColors.neonCyan),
+                  title: Text(l10n.version,
+                      style: const TextStyle(color: AppColors.textPrimary)),
+                  trailing: const Text('1.0.0',
                       style: TextStyle(color: AppColors.textSecondary)),
                 ),
               ],
@@ -99,24 +101,27 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgSurface,
-        title: const Text('Log out?',
-            style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text("You'll need to sign in again to use the app.",
-            style: TextStyle(color: AppColors.textSecondary)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Log out',
-                style: TextStyle(color: AppColors.neonRed)),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          backgroundColor: AppColors.bgSurface,
+          title: Text(l10n.logOutTitle,
+              style: const TextStyle(color: AppColors.textPrimary)),
+          content: Text(l10n.logOutMessage,
+              style: const TextStyle(color: AppColors.textSecondary)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.logOut,
+                  style: const TextStyle(color: AppColors.neonRed)),
+            ),
+          ],
+        );
+      },
     );
     if (confirm != true) return;
     await ref.read(authProvider.notifier).signOut();

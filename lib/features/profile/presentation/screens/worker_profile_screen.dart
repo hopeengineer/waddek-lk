@@ -9,6 +9,7 @@ import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/core/widgets/rating_stars.dart';
 import 'package:waddek_lk/core/widgets/trust_badges.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 import '../providers/profile_provider.dart';
 
 /// Worker profile screen — view stats, tier, skills, portfolio.
@@ -18,23 +19,16 @@ class WorkerProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(currentProfileProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: AppColors.neonCyan),
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(l10n.myProfile)),
       body: profileAsync.when(
         loading: () => const LoadingShimmer(),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${l10n.error}: $e')),
         data: (profile) {
           if (profile == null) {
-            return const Center(child: Text('No profile found'));
+            return Center(child: Text(l10n.noProfileFound));
           }
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -45,12 +39,15 @@ class WorkerProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
 
                 // ── Stats Row ──
-                _buildStatsRow(profile),
+                _buildStatsRow(profile, ref, l10n),
                 const SizedBox(height: 24),
 
-                // ── Verification Status ──
-                _VerificationCard(profile: profile),
-                const SizedBox(height: 16),
+                // ── Verification CTA ── (hidden once verified; the
+                // avatar already carries the verified badge)
+                if (profile.verificationStatus != 'verified') ...[
+                  _VerificationCard(profile: profile),
+                  const SizedBox(height: 16),
+                ],
 
                 // ── Quick Actions ──
                 NeonCard(
@@ -59,23 +56,25 @@ class WorkerProfileScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Quick Actions',
-                            style: TextStyle(
+                        Text(l10n.quickActions,
+                            style: const TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600)),
                         const SizedBox(height: 12),
-                        _actionTile(Icons.edit, 'Edit Profile',
+                        _actionTile(Icons.edit, l10n.editProfile,
                             () => context.push('/profile/edit')),
-                        _actionTile(Icons.photo_library, 'Portfolio',
+                        _actionTile(Icons.photo_library, l10n.portfolio,
                             () => context.push('/profile/portfolio')),
-                        _actionTile(Icons.category, 'My Skills',
+                        _actionTile(Icons.category, l10n.mySkills,
                             () => context.push('/profile/skills')),
-                        _actionTile(Icons.location_on, 'Update Location',
+                        _actionTile(Icons.location_on, l10n.updateLocation,
                             () => context.push('/profile/location')),
+                        _actionTile(Icons.settings, l10n.settings,
+                            () => context.push('/settings')),
                         const Divider(
                             color: AppColors.bgSurface, height: 16),
-                        _actionTile(Icons.swap_horiz, 'Switch to Customer Mode', () {
+                        _actionTile(Icons.swap_horiz, l10n.switchToCustomerMode, () {
                           ref.read(activeRoleProvider.notifier).switchRole('customer');
                           context.go('/customer/home');
                         }),
@@ -163,36 +162,70 @@ class WorkerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow(profile) {
-    return Row(
-      children: [
-        _statItem('Jobs Done', profile.jobsCompletedCount.toString()),
-        _statItem('Rating',
-            profile.averageRating > 0 ? profile.averageRating.toStringAsFixed(1) : '—'),
-        _statItem('Status',
-            profile.isOnline ? 'Online' : 'Offline'),
-      ],
+  Widget _buildStatsRow(profile, WidgetRef ref, AppLocalizations l10n) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _statItem(l10n.jobs, profile.jobsCompletedCount.toString()),
+          const SizedBox(width: 10),
+          _statItem(
+            l10n.rating,
+            profile.averageRating > 0
+                ? profile.averageRating.toStringAsFixed(1)
+                : '—',
+          ),
+          const SizedBox(width: 10),
+          _statItem(
+            l10n.status,
+            profile.isOnline ? l10n.online : l10n.offline,
+            valueColor: profile.isOnline
+                ? AppColors.neonGreen
+                : AppColors.textSecondary,
+            onTap: () => ref
+                .read(currentProfileProvider.notifier)
+                .updateProfile({'is_online': !profile.isOnline}),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _statItem(String label, String value) {
+  Widget _statItem(String label, String value,
+      {Color? valueColor, VoidCallback? onTap}) {
     return Expanded(
       child: NeonCard(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            children: [
-              Text(value,
-                  style: const TextStyle(
-                      color: AppColors.neonCyan,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(label,
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 12)),
-            ],
-          ),
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: TextStyle(
+                  color: valueColor ?? AppColors.neonCyan,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -217,6 +250,7 @@ class _VerificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final status = profile.verificationStatus as String;
     final reason = profile.shuftiproDeclineReason as String?;
 
@@ -228,9 +262,9 @@ class _VerificationCard extends StatelessWidget {
 
     switch (status) {
       case 'verified':
-        color = AppColors.neonGreen;
+        color = AppColors.neonPurple;
         icon = Icons.verified;
-        title = 'Verified';
+        title = l10n.verifiedLabel;
         subtitle = null;
         tapHandler = null;
         break;
@@ -251,7 +285,7 @@ class _VerificationCard extends StatelessWidget {
       default:
         color = AppColors.textSecondary;
         icon = Icons.shield_outlined;
-        title = 'Verify your identity';
+        title = l10n.verifyIdentity;
         subtitle = reason != null && reason.isNotEmpty
             ? reason
             : 'Required for Pro Pass, builds trust with customers.';

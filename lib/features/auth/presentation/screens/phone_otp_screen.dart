@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/neon_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// Phone number entry screen — first step of OTP auth flow.
@@ -43,6 +44,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Container(
@@ -92,12 +94,12 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
 
                   // Title
                   Center(
-                    child: Text('Welcome to Waddek', style: AppTextStyles.h2),
+                    child: Text(l10n.welcome, style: AppTextStyles.h2),
                   ),
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
-                      'Enter your phone number to get started',
+                      l10n.enterPhone,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -140,7 +142,7 @@ class _PhoneOtpScreenState extends ConsumerState<PhoneOtpScreen> {
 
                   // CTA
                   NeonButton(
-                    label: 'Send Verification Code',
+                    label: l10n.sendCode,
                     onPressed: authState.isLoading ? null : _sendOtp,
                     isLoading: authState.isLoading,
                     icon: Icons.sms_outlined,

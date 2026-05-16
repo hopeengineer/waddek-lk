@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/supabase_constants.dart';
@@ -8,6 +10,53 @@ import '../domain/message_model.dart';
 class ChatRepository {
   final _client = SupabaseService.client;
 
+  /// Fetch a single conversation by id (with joined party + job).
+  /// We DO request `phone` in the joined select — the
+  /// "Profiles: counterparty can read" RLS policy only returns a
+  /// non-null row when a `matched` (or later) job exists between
+  /// the two parties, so phone is naturally null before agreement.
+  Future<ConversationModel?> getConversation(String id) async {
+    final row = await _client
+        .from(SupabaseConstants.conversations)
+        .select('''
+          *,
+          customer:profiles!customer_id(id, full_name, avatar_url, phone),
+          worker:profiles!worker_id(id, full_name, avatar_url, phone),
+          job:jobs!job_id(id, title, status)
+        ''')
+        .eq('id', id)
+        .maybeSingle();
+    if (row == null) return null;
+    return ConversationModel.fromJson(row);
+  }
+
+  /// Send a job-proposal message — encoded as JSON in `content` so
+  /// the chat bubble can render the title/price/date without an
+  /// extra fetch. The bound job_id stays in the payload so the
+  /// worker's Accept button knows which job to flip.
+  Future<MessageModel> sendJobProposal({
+    required String conversationId,
+    required String jobId,
+    required String title,
+    double? price,
+    DateTime? scheduledAt,
+    String? categoryName,
+  }) async {
+    final payload = {
+      'job_id': jobId,
+      'title': title,
+      if (price != null) 'price': price,
+      if (scheduledAt != null)
+        'scheduled_at': scheduledAt.toIso8601String(),
+      if (categoryName != null) 'category_name': categoryName,
+    };
+    return sendMessage(
+      conversationId: conversationId,
+      content: jsonEncode(payload),
+      type: 'job_proposal',
+    );
+  }
+
   /// Fetch conversations for the current user.
   Future<List<ConversationModel>> getConversations() async {
     final userId = _client.auth.currentUser?.id;
@@ -17,8 +66,8 @@ class ChatRepository {
         .from(SupabaseConstants.conversations)
         .select('''
           *,
-          customer:profiles!customer_id(id, full_name, avatar_url, phone),
-          worker:profiles!worker_id(id, full_name, avatar_url, phone),
+          customer:profiles!customer_id(id, full_name, avatar_url),
+          worker:profiles!worker_id(id, full_name, avatar_url),
           job:jobs!job_id(id, title, status)
         ''')
         .or('customer_id.eq.$userId,worker_id.eq.$userId')
@@ -27,6 +76,43 @@ class ChatRepository {
     return data
         .map<ConversationModel>((c) => ConversationModel.fromJson(c))
         .toList();
+  }
+
+  /// Find or create the canonical chat thread between the current
+  /// user and a worker. Reuses the most recent conversation between
+  /// the pair in EITHER direction (so prior threads where the roles
+  /// were swapped still surface), regardless of the bound job's
+  /// status — message history should stay accessible even after a
+  /// job completes. Only inserts a new row when no thread exists.
+  Future<ConversationModel> findOrCreateConversationWith(
+      String workerId) async {
+    final me = _client.auth.currentUser?.id;
+    if (me == null) throw Exception('Not authenticated');
+
+    final existing = await _client
+        .from(SupabaseConstants.conversations)
+        .select()
+        .or(
+          'and(customer_id.eq.$me,worker_id.eq.$workerId),'
+          'and(customer_id.eq.$workerId,worker_id.eq.$me)',
+        )
+        .order('last_message_at', ascending: false, nullsFirst: false)
+        .order('created_at', ascending: false)
+        .limit(1);
+    if (existing.isNotEmpty) {
+      return ConversationModel.fromJson(existing.first);
+    }
+
+    // No thread exists yet — create one with me as customer.
+    final data = await _client
+        .from(SupabaseConstants.conversations)
+        .insert({
+          'customer_id': me,
+          'worker_id': workerId,
+        })
+        .select()
+        .single();
+    return ConversationModel.fromJson(data);
   }
 
   /// Get or create a conversation for a job match.

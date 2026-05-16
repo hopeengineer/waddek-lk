@@ -60,9 +60,9 @@ class TrustBadges extends StatelessWidget {
           child,
           if (tierBadge != null) _positioned(0, tierBadge),
           if (isVerified) _positioned(120, _badge(Icons.verified,
-              AppColors.neonGreen, 'Verified')),
+              AppColors.neonPurple, 'Verified')),
           if (isPro) _positioned(240, _badge(Icons.workspace_premium,
-              AppColors.neonPurple, 'Pro')),
+              AppColors.neonAmber, 'Pro')),
         ],
       ),
     );
@@ -96,7 +96,7 @@ class TrustBadges extends StatelessWidget {
         width: badgeRadius * 2,
         height: badgeRadius * 2,
         decoration: BoxDecoration(
-          color: color,
+          color: AppColors.bgDark,
           shape: BoxShape.circle,
           border: Border.all(color: AppColors.bgDark, width: 2),
           boxShadow: [
@@ -106,7 +106,7 @@ class TrustBadges extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(icon, size: badgeRadius * 1.1, color: Colors.white),
+        child: Icon(icon, size: badgeRadius * 1.6, color: color),
       ),
     );
   }

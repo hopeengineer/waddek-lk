@@ -48,6 +48,26 @@ import '../../features/disputes/presentation/screens/raise_dispute_screen.dart';
 /// [NotificationService]) that need to navigate without a BuildContext.
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Fade-transition page used for the customer ↔ worker shell landing
+/// routes. Without this, switching role snap-cuts between two
+/// different bottom-nav layouts which feels jarring; with a short
+/// fade the swap reads as a smooth transition.
+CustomTransitionPage<T> _fadePage<T>({
+  required Widget child,
+  LocalKey? key,
+  Duration duration = const Duration(milliseconds: 150),
+}) {
+  return CustomTransitionPage<T>(
+    key: key,
+    child: child,
+    transitionDuration: duration,
+    reverseTransitionDuration: duration,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+  );
+}
+
 /// Bridges Supabase auth changes + Riverpod state into a
 /// [ChangeNotifier] that GoRouter can subscribe to. Without this the
 /// router only evaluates redirects on navigation events, so the user
@@ -105,10 +125,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
         final loc = state.matchedLocation;
         final role = ref.read(activeRoleProvider);
-        if (role == 'customer' && loc.startsWith('/worker')) {
+        // Use the trailing slash so '/worker/jobs' is caught but the
+        // standalone '/workers/:id' route (customer viewing a worker
+        // profile) isn't — the latter starts with '/workers/', not
+        // '/worker/'. Same for customer-side paths.
+        if (role == 'customer' && loc.startsWith('/worker/')) {
           return '/customer/home';
         }
-        if (role == 'worker' && loc.startsWith('/customer')) {
+        if (role == 'worker' && loc.startsWith('/customer/')) {
           return '/worker/jobs';
         }
       }
@@ -215,8 +239,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/customer/home',
             name: 'customer-home-tab',
-            builder: (context, state) =>
-                const CustomerHomeScreen(),
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              child: const CustomerHomeScreen(),
+            ),
           ),
           GoRoute(
             path: '/customer/jobs',
@@ -249,7 +275,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/worker/jobs',
             name: 'worker-jobs',
-            builder: (context, state) => const AvailableJobsScreen(),
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              child: const AvailableJobsScreen(),
+            ),
           ),
           GoRoute(
             path: '/worker/bids',
@@ -261,6 +290,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/wallet',
             name: 'wallet',
             builder: (context, state) => const WalletScreen(),
+          ),
+          GoRoute(
+            path: '/worker/messages',
+            name: 'worker-messages',
+            builder: (context, state) => const ConversationsScreen(),
+          ),
+          GoRoute(
+            path: '/worker/notifications',
+            name: 'worker-notifications',
+            builder: (context, state) => const NotificationsScreen(),
           ),
           GoRoute(
             path: '/worker/profile',

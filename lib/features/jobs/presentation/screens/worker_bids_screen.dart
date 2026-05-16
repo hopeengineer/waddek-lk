@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/neon_card.dart';
 import '../../../../core/widgets/loading_shimmer.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../jobs/domain/bid_model.dart';
 import '../../../jobs/data/jobs_repository.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
@@ -26,10 +27,11 @@ class WorkerBidsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bidsAsync = ref.watch(workerBidsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Bids'),
+        title: Text(l10n.myBids),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: AppColors.neonCyan),
@@ -46,21 +48,21 @@ class WorkerBidsScreen extends ConsumerWidget {
               const Icon(Icons.error_outline,
                   color: AppColors.neonRed, size: 48),
               const SizedBox(height: 16),
-              Text('Error loading bids',
+              Text(l10n.bidsLoadError,
                   style: AppTextStyles.bodyMedium
                       .copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => ref.invalidate(workerBidsProvider),
-                child:
-                    const Text('Retry', style: TextStyle(color: AppColors.neonCyan)),
+                child: Text(l10n.retry,
+                    style: const TextStyle(color: AppColors.neonCyan)),
               ),
             ],
           ),
         ),
         data: (bids) {
           if (bids.isEmpty) {
-            return _buildEmptyState(context);
+            return _buildEmptyState(context, l10n);
           }
 
           // Group bids by status
@@ -75,13 +77,13 @@ class WorkerBidsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               // ── Summary Stats ──
-              _buildSummaryRow(bids.length, pendingBids.length,
+              _buildSummaryRow(l10n, bids.length, pendingBids.length,
                   acceptedBids.length),
               const SizedBox(height: 20),
 
               // ── Accepted Bids ──
               if (acceptedBids.isNotEmpty) ...[
-                _sectionTitle('Accepted', AppColors.neonGreen,
+                _sectionTitle(l10n.accepted, AppColors.neonGreen,
                     acceptedBids.length),
                 ...acceptedBids
                     .map((b) => _BidCard(bid: b, key: ValueKey(b.id))),
@@ -90,7 +92,7 @@ class WorkerBidsScreen extends ConsumerWidget {
 
               // ── Pending Bids ──
               if (pendingBids.isNotEmpty) ...[
-                _sectionTitle('Pending', AppColors.neonAmber,
+                _sectionTitle(l10n.pending, AppColors.neonAmber,
                     pendingBids.length),
                 ...pendingBids
                     .map((b) => _BidCard(bid: b, key: ValueKey(b.id))),
@@ -100,7 +102,7 @@ class WorkerBidsScreen extends ConsumerWidget {
               // ── Rejected Bids ──
               if (rejectedBids.isNotEmpty) ...[
                 _sectionTitle(
-                    'Rejected', AppColors.neonRed, rejectedBids.length),
+                    l10n.rejected, AppColors.neonRed, rejectedBids.length),
                 ...rejectedBids
                     .map((b) => _BidCard(bid: b, key: ValueKey(b.id))),
               ],
@@ -113,7 +115,7 @@ class WorkerBidsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -130,10 +132,10 @@ class WorkerBidsScreen extends ConsumerWidget {
                   color: AppColors.neonCyan, size: 56),
             ),
             const SizedBox(height: 24),
-            Text('No bids yet', style: AppTextStyles.h3),
+            Text(l10n.noBidsYet, style: AppTextStyles.h3),
             const SizedBox(height: 8),
             Text(
-              'Browse available jobs and start placing bids to earn.',
+              l10n.noBidsDesc,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -143,7 +145,7 @@ class WorkerBidsScreen extends ConsumerWidget {
             ElevatedButton.icon(
               onPressed: () => context.go('/worker/jobs'),
               icon: const Icon(Icons.search, size: 18),
-              label: const Text('Browse Jobs'),
+              label: Text(l10n.browseJobs),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.neonCyan,
                 foregroundColor: AppColors.scaffoldDark,
@@ -159,17 +161,18 @@ class WorkerBidsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSummaryRow(int total, int pending, int accepted) {
+  Widget _buildSummaryRow(
+      AppLocalizations l10n, int total, int pending, int accepted) {
     return Row(
       children: [
         _SummaryChip(
-            label: 'Total', count: total, color: AppColors.neonCyan),
+            label: l10n.total, count: total, color: AppColors.neonCyan),
         const SizedBox(width: 10),
         _SummaryChip(
-            label: 'Pending', count: pending, color: AppColors.neonAmber),
+            label: l10n.pending, count: pending, color: AppColors.neonAmber),
         const SizedBox(width: 10),
         _SummaryChip(
-            label: 'Won', count: accepted, color: AppColors.neonGreen),
+            label: l10n.won, count: accepted, color: AppColors.neonGreen),
       ],
     );
   }
@@ -303,10 +306,10 @@ class _BidCard extends StatelessWidget {
                     ),
                     if (!bid.isUnlocked) ...[
                       const Spacer(),
-                      Icon(Icons.lock_outline,
+                      const Icon(Icons.lock_outline,
                           color: AppColors.textDisabled, size: 14),
                       const SizedBox(width: 4),
-                      Text('Locked',
+                      Text(AppLocalizations.of(context)!.locked,
                           style: AppTextStyles.labelSmall),
                     ],
                   ],
@@ -336,6 +339,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     Color color;
     String label;
     IconData icon;
@@ -343,17 +347,17 @@ class _StatusBadge extends StatelessWidget {
     switch (status) {
       case 'accepted':
         color = AppColors.neonGreen;
-        label = 'Accepted';
+        label = l10n.accepted;
         icon = Icons.check_circle;
         break;
       case 'rejected':
         color = AppColors.neonRed;
-        label = 'Rejected';
+        label = l10n.rejected;
         icon = Icons.cancel;
         break;
       default:
         color = AppColors.neonAmber;
-        label = 'Pending';
+        label = l10n.pending;
         icon = Icons.hourglass_top;
     }
 

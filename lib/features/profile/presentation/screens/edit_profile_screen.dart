@@ -7,7 +7,9 @@ import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/utils/validators.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../verification/presentation/widgets/reverify_required_sheet.dart';
 import '../providers/profile_provider.dart';
 
 /// Edit screen for both worker and customer profile basic info.
@@ -46,10 +48,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(currentProfileProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: Text(l10n.editProfile),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
@@ -60,8 +63,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: AppColors.neonCyan),
                   )
-                : const Text('Save',
-                    style: TextStyle(
+                : Text(l10n.save,
+                    style: const TextStyle(
                         color: AppColors.neonCyan,
                         fontWeight: FontWeight.w600)),
           ),
@@ -69,10 +72,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ),
       body: profileAsync.when(
         loading: () => const LoadingShimmer(),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${l10n.error}: $e')),
         data: (profile) {
           if (profile == null) {
-            return const Center(child: Text('No profile loaded'));
+            return Center(child: Text(l10n.noProfileFound));
           }
           if (!_initialized) {
             _nameCtrl.text = profile.fullName ?? '';
@@ -227,6 +230,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _pickAvatar() async {
+    // Same lock rule as customer_profile_screen — locked after
+    // verification only when there's already an avatar to protect.
+    final p = ref.read(currentProfileProvider).valueOrNull;
+    if (p != null && p.identityLocked && p.avatarUrl != null) {
+      final chose = await showReVerifyRequiredSheet(
+        context,
+        lockedField: 'profile picture',
+      );
+      if (mounted) handleReVerifyChoice(context, chose);
+      return;
+    }
+
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: AppColors.bgSurface,
@@ -262,9 +277,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (picked == null) return;
 
     try {
+      final bytes = await picked.readAsBytes();
       await ref
           .read(currentProfileProvider.notifier)
-          .uploadAvatar(picked.path);
+          .uploadAvatar(bytes);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

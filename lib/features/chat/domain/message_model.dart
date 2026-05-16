@@ -8,7 +8,10 @@ part 'message_model.g.dart';
 class ConversationModel with _$ConversationModel {
   const factory ConversationModel({
     required String id,
-    @JsonKey(name: 'job_id') required String jobId,
+    // Nullable: a conversation can exist before a job is created
+    // (the customer taps "Message" on a worker's profile; the job is
+    // only created later from inside the chat via "Propose Job").
+    @JsonKey(name: 'job_id') String? jobId,
     @JsonKey(name: 'customer_id') required String customerId,
     @JsonKey(name: 'worker_id') required String workerId,
     @JsonKey(name: 'last_message_at') DateTime? lastMessageAt,

@@ -9,6 +9,7 @@ import 'package:waddek_lk/core/widgets/neon_button.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/rating_stars.dart';
 import 'package:waddek_lk/core/widgets/trust_badges.dart';
+import 'package:waddek_lk/features/chat/data/chat_repository.dart';
 import 'package:waddek_lk/features/reviews/presentation/providers/reviews_provider.dart';
 import '../providers/profile_provider.dart';
 
@@ -164,11 +165,28 @@ class WorkerDetailScreen extends ConsumerWidget {
                       },
                     ),
                     const SizedBox(height: 24),
+                    // Primary CTA — message first, agree later. The
+                    // job (and phone unlock) happens from inside the
+                    // chat via "Propose Job".
                     NeonButton(
-                      label: 'Post a job for this worker',
-                      icon: Icons.send,
-                      onPressed: () =>
-                          context.push('/jobs/create', extra: workerId),
+                      label: 'Message',
+                      icon: Icons.chat_bubble_outline,
+                      onPressed: () async {
+                        final repo = ChatRepository();
+                        try {
+                          final conv =
+                              await repo.findOrCreateConversationWith(workerId);
+                          if (context.mounted) {
+                            context.push('/chat/${conv.id}');
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Could not start chat: $e')),
+                            );
+                          }
+                        }
+                      },
                     ),
                     const SizedBox(height: 80),
                   ]),

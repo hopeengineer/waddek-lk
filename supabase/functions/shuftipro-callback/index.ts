@@ -23,7 +23,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SHUFTIPRO_CLIENT_ID = Deno.env.get("SHUFTIPRO_CLIENT_ID")!;
 const SHUFTIPRO_SECRET_KEY = Deno.env.get("SHUFTIPRO_SECRET_KEY")!;
+
+// Matches MAX_LIFETIME_ATTEMPTS in shufti-start-verification — the
+// 3rd attempt is the forced-selfie path where Shufti captures a fresh
+// face and we must promote it to the user's avatar.
+const MAX_LIFETIME_ATTEMPTS = 3;
 
 async function sha256Hex(input: string): Promise<string> {
   const buf = await crypto.subtle.digest(
@@ -53,12 +59,71 @@ function parseDob(raw: unknown): string | null {
   return null;
 }
 
-function combineName(doc: any): string | null {
-  const first = (doc?.name?.first_name ?? "").trim();
-  const middle = (doc?.name?.middle_name ?? "").trim();
-  const last = (doc?.name?.last_name ?? "").trim();
-  const full = [first, middle, last].filter((s) => s.length > 0).join(" ");
-  return full.length > 0 ? full : null;
+// Shufti returns extracted data across TWO branches depending on the
+// `fetch_enhanced_data` request flag:
+//
+//   1. verification_data.document.{name, dob, document_number}
+//      — basic OCR. `name` can be either:
+//        { first_name, last_name, full_name } (sometimes first/last NULL)
+//        | a plain string
+//
+//   2. additional_data.document.proof.{gender, country, country_code,
+//      document_country, full_name, ...}
+//      — enhanced data set, requested via fetch_enhanced_data="1".
+//      For Sri Lankan NIC specifically, gender / nationality only
+//      appear here, NOT under verification_data.document.
+//
+// The helpers below check both branches.
+
+function combineName(doc: any, proof: any): string | null {
+  const n = doc?.name;
+  if (typeof n === "string") {
+    const s = n.trim();
+    if (s.length > 0) return s;
+  }
+  if (n && typeof n === "object") {
+    const first = (n.first_name ?? "").trim();
+    const middle = (n.middle_name ?? "").trim();
+    const last = (n.last_name ?? "").trim();
+    const joined = [first, middle, last].filter((s) => s.length > 0).join(" ");
+    if (joined.length > 0) return joined;
+    const full = (n.full_name ?? "").trim();
+    if (full.length > 0) return full;
+  }
+  const docFull = (doc?.full_name ?? "").trim?.();
+  if (typeof docFull === "string" && docFull.length > 0) return docFull;
+  const enhancedFull = (proof?.full_name ?? "").trim?.();
+  if (typeof enhancedFull === "string" && enhancedFull.length > 0) return enhancedFull;
+  return null;
+}
+
+function pickGender(doc: any, vd: any, proof: any): string | null {
+  const candidates = [
+    doc?.gender, doc?.sex,
+    vd?.gender, vd?.sex,
+    proof?.gender, proof?.sex,
+  ];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim().length > 0) return c.trim();
+  }
+  return null;
+}
+
+function pickNationality(doc: any, vd: any, proof: any): string | null {
+  const candidates = [
+    doc?.nationality,
+    doc?.country,
+    doc?.issuing_country,
+    vd?.nationality,
+    vd?.country,
+    proof?.document_country, // "Sri Lanka" — capitalised, friendliest
+    proof?.country, // "sri lanka" — lower-case fallback
+    proof?.country_code,
+  ];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim().length > 0) return c.trim();
+  }
+  return null;
 }
 
 function normaliseDocNumber(raw: unknown): string | null {
@@ -103,7 +168,9 @@ serve(async (req: Request) => {
     // Fetch current profile for the user this reference belongs to.
     const { data: profile, error: profErr } = await supabase
       .from("profiles")
-      .select("id, id_doc_type, identity_locked, shuftipro_reference")
+      .select(
+        "id, id_doc_type, identity_locked, shuftipro_reference, verification_attempts, avatar_url",
+      )
       .eq("id", userId)
       .maybeSingle();
 
@@ -177,12 +244,12 @@ serve(async (req: Request) => {
       .neq("id", userId)
       .maybeSingle();
 
-    const dob = parseDob(doc.dob);
-    const fullName = combineName(doc);
-    const gender = typeof doc.gender === "string" ? doc.gender : null;
-    const nationality = typeof doc.nationality === "string"
-      ? doc.nationality
-      : null;
+    const vd = payload?.verification_data ?? {};
+    const proof = payload?.additional_data?.document?.proof ?? {};
+    const dob = parseDob(doc.dob ?? proof.dob);
+    const fullName = combineName(doc, proof);
+    const gender = pickGender(doc, vd, proof);
+    const nationality = pickNationality(doc, vd, proof);
 
     if (existing) {
       // Duplicate — route the user to the recovery flow. We do NOT
@@ -208,20 +275,63 @@ serve(async (req: Request) => {
       return new Response("ok", { status: 200 });
     }
 
+    // On the 3rd (forced live-selfie) attempt, Shufti captured a
+    // fresh face image — pull it from proofs.face.proof and promote
+    // it to the user's locked avatar.
+    let newAvatarUrl: string | null = null;
+    const isLiveSelfieAttempt =
+      (profile.verification_attempts ?? 0) >= MAX_LIFETIME_ATTEMPTS;
+    const faceProofUrl = payload?.proofs?.face?.proof as string | undefined;
+
+    if (isLiveSelfieAttempt && faceProofUrl) {
+      try {
+        const basic = btoa(`${SHUFTIPRO_CLIENT_ID}:${SHUFTIPRO_SECRET_KEY}`);
+        const imgResp = await fetch(faceProofUrl, {
+          headers: { Authorization: `Basic ${basic}` },
+        });
+        if (imgResp.ok) {
+          const buf = new Uint8Array(await imgResp.arrayBuffer());
+          const objectPath = `${userId}/avatar.jpg`;
+          const { error: upErr } = await supabase.storage
+            .from("avatars")
+            .upload(objectPath, buf, {
+              contentType: "image/jpeg",
+              upsert: true,
+            });
+          if (!upErr) {
+            const { data: pub } = supabase.storage
+              .from("avatars")
+              .getPublicUrl(objectPath);
+            // Bust cache so the new image is visible immediately.
+            newAvatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
+          } else {
+            console.error("[shuftipro-callback] avatar upload failed:", upErr);
+          }
+        } else {
+          console.error(
+            "[shuftipro-callback] face proof fetch failed:",
+            imgResp.status,
+          );
+        }
+      } catch (e) {
+        console.error("[shuftipro-callback] selfie-to-avatar error:", e);
+      }
+    }
+
     // Clean record — commit verified state and lock identity.
-    await supabase
-      .from("profiles")
-      .update({
-        verification_status: "verified",
-        identity_locked: true,
-        id_doc_hash: idDocHash,
-        date_of_birth: dob,
-        gender,
-        nationality,
-        full_name: fullName ?? undefined,
-        shuftipro_decline_reason: null,
-      })
-      .eq("id", userId);
+    const update: Record<string, unknown> = {
+      verification_status: "verified",
+      identity_locked: true,
+      id_doc_hash: idDocHash,
+      date_of_birth: dob,
+      gender,
+      nationality,
+      full_name: fullName ?? undefined,
+      shuftipro_decline_reason: null,
+    };
+    if (newAvatarUrl) update.avatar_url = newAvatarUrl;
+
+    await supabase.from("profiles").update(update).eq("id", userId);
 
     await supabase.from("notifications").insert({
       user_id: userId,

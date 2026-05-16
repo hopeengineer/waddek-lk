@@ -9,6 +9,7 @@ import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/core/services/payhere_service.dart';
 import 'package:waddek_lk/features/profile/presentation/providers/profile_provider.dart';
 import 'package:waddek_lk/features/subscription/presentation/providers/subscription_provider.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 
 /// Pro Pass screen — benefits, pricing, subscribe CTA.
 class ProPassScreen extends ConsumerStatefulWidget {
@@ -25,9 +26,10 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
   Widget build(BuildContext context) {
     final plansAsync = ref.watch(subscriptionPlansProvider);
     final profile = ref.watch(currentProfileProvider).valueOrNull;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Waddek Pro Pass')),
+      appBar: AppBar(title: Text(l10n.proPass)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -38,7 +40,7 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.neonPurple.withOpacity(0.18),
+                    AppColors.neonAmber.withOpacity(0.18),
                     AppColors.neonCyan.withOpacity(0.12),
                   ],
                   begin: Alignment.topLeft,
@@ -46,25 +48,25 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border:
-                    Border.all(color: AppColors.neonPurple.withOpacity(0.3)),
+                    Border.all(color: AppColors.neonAmber.withOpacity(0.3)),
               ),
               child: Column(
                 children: [
                   const Icon(Icons.workspace_premium,
-                      size: 56, color: AppColors.neonPurple),
+                      size: 56, color: AppColors.neonAmber),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Waddek Pro Pass',
-                    style: TextStyle(
+                  Text(
+                    l10n.proPass,
+                    style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'The smartest way to grow your business',
-                    style: TextStyle(
+                  Text(
+                    l10n.proPassTagline,
+                    style: const TextStyle(
                         color: AppColors.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 16),
@@ -75,7 +77,8 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
                       if (plans.isEmpty) return const SizedBox.shrink();
                       final plan = plans.first;
                       return Text(
-                        'Rs. ${plan.price.toStringAsFixed(0)} / month',
+                        l10n.proPassPriceMonthly(
+                            plan.price.toStringAsFixed(0)),
                         style: const TextStyle(
                           color: AppColors.neonCyan,
                           fontSize: 32,
@@ -92,26 +95,26 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
             // ── Benefits ──
             _benefitCard(
               Icons.money_off,
-              'Zero Lead Fees',
-              'Unlock customer details for free — up to 50 per month.',
+              l10n.zeroLeadFees,
+              l10n.zeroLeadFeesDesc,
               AppColors.neonGreen,
             ),
             _benefitCard(
               Icons.trending_up,
-              'Priority Ranking',
-              'Your bids appear first. Get notified before PAYG workers.',
+              l10n.priorityRanking,
+              l10n.priorityRankingDesc,
               AppColors.neonCyan,
             ),
             _benefitCard(
               Icons.verified,
-              'Verified Badge',
-              'Stand out with the Pro badge on your profile and bids.',
+              l10n.verifiedBadgeBenefit,
+              l10n.verifiedBadgeBenefitDesc,
               AppColors.neonPurple,
             ),
             _benefitCard(
               Icons.savings,
-              'Save Money',
-              'Doing 20+ jobs/month? Pro Pass costs less than lead fees.',
+              l10n.saveMoney,
+              l10n.saveMoneyDesc,
               AppColors.neonAmber,
             ),
             const SizedBox(height: 8),
@@ -124,22 +127,21 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.lightbulb_outline,
+                      children: [
+                        const Icon(Icons.lightbulb_outline,
                             color: AppColors.neonAmber, size: 18),
-                        SizedBox(width: 6),
-                        Text('Break-even calculation',
-                            style: TextStyle(
+                        const SizedBox(width: 6),
+                        Text(l10n.breakEvenTitle,
+                            style: const TextStyle(
                                 color: AppColors.neonAmber,
                                 fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'At Rs. 75/lead, Pro Pass pays for itself after just 20 unlocks. '
-                      'That leaves you 30 more for free!',
+                    Text(
+                      l10n.breakEvenDesc,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                           color: AppColors.textSecondary, fontSize: 13),
                     ),
                   ],
@@ -155,15 +157,15 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.shield_outlined,
+                          const Icon(Icons.shield_outlined,
                               color: AppColors.neonAmber, size: 20),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Verify your identity to subscribe',
-                              style: TextStyle(
+                              l10n.verifyToSubscribe,
+                              style: const TextStyle(
                                   color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w600),
                             ),
@@ -171,14 +173,14 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Pro Pass is for verified users only. It takes about a minute.',
-                        style: TextStyle(
+                      Text(
+                        l10n.proPassOnlyForVerified,
+                        style: const TextStyle(
                             color: AppColors.textSecondary, fontSize: 12),
                       ),
                       const SizedBox(height: 12),
                       NeonButton(
-                        label: 'Verify identity',
+                        label: l10n.verifyIdentity,
                         icon: Icons.videocam,
                         onPressed: () => context.pushNamed('verification'),
                       ),
@@ -188,15 +190,16 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
               ),
             ] else ...[
               NeonButton(
-                label: 'Subscribe to Pro Pass',
+                label: l10n.subscribeToProPass,
                 icon: Icons.workspace_premium,
                 isLoading: _subscribing,
                 onPressed: () => _subscribe(profile),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Cancel anytime. No lock-in.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              Text(
+                l10n.cancelAnytime,
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 12),
               ),
             ],
           ],
@@ -238,17 +241,19 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
 
       // TODO: Call PayHere.startPayment(payment, onCompleted, onError)
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('PayHere subscription payment initiated'),
+          SnackBar(
+            content: Text(l10n.payHereInitiated),
             backgroundColor: AppColors.neonCyan,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'),
+          SnackBar(content: Text('${l10n.error}: $e'),
               backgroundColor: AppColors.neonRed),
         );
       }

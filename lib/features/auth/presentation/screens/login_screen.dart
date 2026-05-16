@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/neon_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// Login screen — phone/email + password for returning users.
@@ -48,6 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Container(
@@ -101,12 +103,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // Title
                     Center(
-                      child: Text('Welcome Back', style: AppTextStyles.h2),
+                      child: Text(l10n.welcomeBack, style: AppTextStyles.h2),
                     ),
                     const SizedBox(height: 8),
                     Center(
                       child: Text(
-                        'Log in with your phone or email',
+                        l10n.loginSubtitle,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -122,14 +124,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: AppTextStyles.bodyLarge,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
-                          return 'Enter your phone number or email';
+                          return l10n.phoneOrEmailRequired;
                         }
                         return null;
                       },
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.person_outline,
                             color: AppColors.textSecondary),
-                        hintText: 'Phone number or email',
+                        hintText: l10n.phoneOrEmailHint,
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textDisabled,
                         ),
@@ -145,14 +147,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: AppTextStyles.bodyLarge,
                       validator: (v) {
                         if (v == null || v.isEmpty) {
-                          return 'Enter your password';
+                          return l10n.passwordRequired;
                         }
                         return null;
                       },
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.lock_outline,
                             color: AppColors.textSecondary),
-                        hintText: 'Password',
+                        hintText: l10n.password,
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textDisabled,
                         ),
@@ -187,7 +189,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onPressed: () =>
                             context.pushNamed('forgot-password'),
                         child: Text(
-                          'Forgot password?',
+                          l10n.forgotPassword,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.neonCyan,
                             fontWeight: FontWeight.w600,
@@ -200,7 +202,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // CTA
                     NeonButton(
-                      label: 'Log In',
+                      label: l10n.logIn,
                       onPressed: authState.isLoading ? null : _login,
                       isLoading: authState.isLoading,
                       icon: Icons.login_rounded,
@@ -217,12 +219,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             style: AppTextStyles.bodyMedium,
                             children: [
                               TextSpan(
-                                text: "Don't have an account? ",
-                                style: TextStyle(color: AppColors.textSecondary),
+                                text: l10n.noAccount,
+                                style: const TextStyle(
+                                    color: AppColors.textSecondary),
                               ),
                               TextSpan(
-                                text: 'Sign Up',
-                                style: TextStyle(
+                                text: l10n.signUp,
+                                style: const TextStyle(
                                   color: AppColors.neonCyan,
                                   fontWeight: FontWeight.w600,
                                 ),

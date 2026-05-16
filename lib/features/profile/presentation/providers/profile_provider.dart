@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/location_service.dart';
@@ -141,28 +143,28 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
     state = AsyncValue.data(updated);
   }
 
-  /// Upload avatar.
-  Future<String> uploadAvatar(String filePath) async {
+  /// Upload avatar. Bytes can come from `XFile.readAsBytes()` which
+  /// works on Flutter web (no filesystem) and mobile alike.
+  Future<String> uploadAvatar(Uint8List bytes) async {
     final current = state.valueOrNull;
     if (current == null) throw Exception('No profile loaded');
-    final url =
-        await _repo.uploadAvatar(userId: current.id, filePath: filePath);
+    final url = await _repo.uploadAvatar(userId: current.id, bytes: bytes);
     await loadProfile(); // refresh
     return url;
   }
 
   /// Upload NIC photos.
   Future<void> uploadNic({
-    required String frontPath,
-    required String backPath,
+    required Uint8List frontBytes,
+    required Uint8List backBytes,
     required String nicNumber,
   }) async {
     final current = state.valueOrNull;
     if (current == null) throw Exception('No profile loaded');
     await _repo.uploadNicPhotos(
       userId: current.id,
-      frontPath: frontPath,
-      backPath: backPath,
+      frontBytes: frontBytes,
+      backBytes: backBytes,
       nicNumber: nicNumber,
     );
     await loadProfile();

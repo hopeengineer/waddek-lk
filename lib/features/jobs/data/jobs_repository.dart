@@ -106,6 +106,84 @@ class JobsRepository {
     return JobModel.fromJson(data);
   }
 
+  /// Create a draft job proposed inside an existing chat. The job
+  /// is pre-bound to its two parties (customer_id + matched_worker_id)
+  /// and has broadcast_radius_km=0 because it isn't a marketplace
+  /// listing. `proposedBy` is whichever auth user is making this
+  /// offer — the OTHER party is the one who can accept/amend/reject.
+  /// Status stays 'draft' until a settlement RPC fires.
+  Future<JobModel> createChatProposedJob({
+    required String customerId,
+    required String workerId,
+    required String proposedBy,
+    required String categoryId,
+    required String title,
+    double? price,
+    DateTime? scheduledAt,
+    required double customerLat,
+    required double customerLng,
+  }) async {
+    final point = 'POINT($customerLng $customerLat)';
+    final data = await _client
+        .from(SupabaseConstants.jobs)
+        .insert({
+          'customer_id': customerId,
+          'matched_worker_id': workerId,
+          'proposed_by': proposedBy,
+          'category_id': categoryId,
+          'title': title,
+          'budget_min': price,
+          'budget_max': price,
+          'scheduled_at': scheduledAt?.toIso8601String(),
+          'location': point,
+          'status': 'draft',
+          'broadcast_radius_km': 0,
+        })
+        .select()
+        .single();
+    return JobModel.fromJson(data);
+  }
+
+  /// Receiver of the current proposal accepts. RPC flips status to
+  /// `matched` and binds the conversation to the job, atomically,
+  /// under a server-side check that caller != proposed_by.
+  Future<void> acceptChatProposedJob({
+    required String jobId,
+    required String conversationId,
+  }) async {
+    await _client.rpc('accept_chat_proposed_job', params: {
+      'p_job_id': jobId,
+      'p_conversation_id': conversationId,
+    });
+  }
+
+  /// Receiver of the current proposal rejects. Job status → 'cancelled'.
+  Future<void> rejectChatProposedJob({required String jobId}) async {
+    await _client.rpc('reject_chat_proposed_job', params: {
+      'p_job_id': jobId,
+    });
+  }
+
+  /// Receiver amends the live proposal — updates the editable
+  /// fields on the existing job row and flips `proposed_by` so the
+  /// original sender becomes the new receiver. Caller then posts a
+  /// fresh `job_proposal` message referencing the same job_id.
+  Future<void> amendChatProposedJob({
+    required String jobId,
+    required String title,
+    required String categoryId,
+    double? price,
+    DateTime? scheduledAt,
+  }) async {
+    await _client.rpc('amend_chat_proposed_job', params: {
+      'p_job_id': jobId,
+      'p_title': title,
+      'p_category_id': categoryId,
+      'p_price': price,
+      'p_scheduled_at': scheduledAt?.toIso8601String(),
+    });
+  }
+
   /// Update a job's status.
   Future<JobModel> updateJobStatus(String jobId, String status) async {
     final data = await _client

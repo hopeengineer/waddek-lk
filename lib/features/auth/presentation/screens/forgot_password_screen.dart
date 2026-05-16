@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/neon_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// Step 1 of password reset: enter phone, receive OTP.
@@ -43,6 +44,7 @@ class _ForgotPasswordScreenState
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(),
@@ -55,10 +57,10 @@ class _ForgotPasswordScreenState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 24),
-                Text('Reset your password', style: AppTextStyles.h2),
+                Text(l10n.resetPasswordTitle, style: AppTextStyles.h2),
                 const SizedBox(height: 8),
                 Text(
-                  'Enter the phone number on your account. We\'ll text you a code to set a new password.',
+                  l10n.resetPasswordDesc,
                   style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary),
                 ),
@@ -68,10 +70,10 @@ class _ForgotPasswordScreenState
                   keyboardType: TextInputType.phone,
                   style: AppTextStyles.bodyLarge,
                   validator: Validators.phone,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.phone_outlined,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.phone_outlined,
                         color: AppColors.textSecondary),
-                    hintText: 'e.g. 0771234567',
+                    hintText: l10n.phoneHint,
                   ),
                 ),
                 if (auth.errorMessage != null) ...[
@@ -84,7 +86,7 @@ class _ForgotPasswordScreenState
                 ],
                 const SizedBox(height: 24),
                 NeonButton(
-                  label: 'Send reset code',
+                  label: l10n.sendResetCode,
                   icon: Icons.sms_outlined,
                   isLoading: auth.isLoading,
                   onPressed: auth.isLoading ? null : _send,

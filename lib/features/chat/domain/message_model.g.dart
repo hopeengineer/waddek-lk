@@ -10,7 +10,7 @@ _$ConversationModelImpl _$$ConversationModelImplFromJson(
         Map<String, dynamic> json) =>
     _$ConversationModelImpl(
       id: json['id'] as String,
-      jobId: json['job_id'] as String,
+      jobId: json['job_id'] as String?,
       customerId: json['customer_id'] as String,
       workerId: json['worker_id'] as String,
       lastMessageAt: json['last_message_at'] == null

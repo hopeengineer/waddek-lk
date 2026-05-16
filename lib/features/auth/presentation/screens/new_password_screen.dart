@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/neon_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// Final step of password reset: user is authenticated via OTP-derived
@@ -37,9 +38,10 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
         .updatePassword(_passwordCtrl.text);
     if (!mounted) return;
     if (ok) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password updated. You are now signed in.'),
+        SnackBar(
+          content: Text(l10n.passwordUpdatedMsg),
           backgroundColor: AppColors.neonGreen,
         ),
       );
@@ -51,6 +53,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(),
@@ -63,10 +66,10 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 24),
-                Text('Set a new password', style: AppTextStyles.h2),
+                Text(l10n.setNewPasswordTitle, style: AppTextStyles.h2),
                 const SizedBox(height: 8),
                 Text(
-                  'Choose a password that\'s at least 8 characters.',
+                  l10n.newPasswordDesc,
                   style: AppTextStyles.bodyMedium
                       .copyWith(color: AppColors.textSecondary),
                 ),
@@ -76,14 +79,14 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                   obscureText: _obscure1,
                   style: AppTextStyles.bodyLarge,
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Enter a password';
-                    if (v.length < 8) return 'Use at least 8 characters';
+                    if (v == null || v.isEmpty) return l10n.enterPasswordValidator;
+                    if (v.length < 8) return l10n.useAtLeast8Chars;
                     return null;
                   },
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.lock_outline,
                         color: AppColors.textSecondary),
-                    hintText: 'New password',
+                    hintText: l10n.newPasswordHint,
                     suffixIcon: IconButton(
                       icon: Icon(_obscure1
                           ? Icons.visibility_off_outlined
@@ -100,14 +103,14 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                   style: AppTextStyles.bodyLarge,
                   validator: (v) {
                     if (v != _passwordCtrl.text) {
-                      return 'Passwords do not match';
+                      return l10n.passwordsDontMatch;
                     }
                     return null;
                   },
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.lock_outline,
                         color: AppColors.textSecondary),
-                    hintText: 'Confirm new password',
+                    hintText: l10n.confirmNewPasswordHint,
                     suffixIcon: IconButton(
                       icon: Icon(_obscure2
                           ? Icons.visibility_off_outlined
@@ -127,7 +130,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                 ],
                 const SizedBox(height: 24),
                 NeonButton(
-                  label: 'Update password',
+                  label: l10n.updatePassword,
                   icon: Icons.check,
                   isLoading: auth.isLoading,
                   onPressed: auth.isLoading ? null : _submit,

@@ -29,12 +29,21 @@ class ActiveRoleNotifier extends StateNotifier<String> {
   bool get isWorker => state == 'worker';
 
   /// Switch to the given role and persist to DB.
+  ///
+  /// We intentionally do NOT invalidate `currentProfileProvider` here.
+  /// `activeRoleProvider` watches the profile to get its initial value,
+  /// so invalidating mid-switch causes the notifier to be recreated
+  /// with a stale `initialRole` while the profile reloads — which
+  /// makes the role briefly flap back to 'customer', the router
+  /// redirects back to /customer/home, and the user sees a flicker of
+  /// the previous shell. The runtime source of truth is this
+  /// notifier's state (already updated above); the DB column is
+  /// updated below. The cached `profile.activeRole` field will catch
+  /// up on the next natural profile refresh.
   Future<void> switchRole(String role) async {
     if (role == state) return;
     state = role;
     await _repo.updateActiveRole(role);
-    // Re-fetch profile with updated role data
-    _ref.invalidate(currentProfileProvider);
   }
 
   /// Toggle between customer and worker.

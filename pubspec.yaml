@@ -45,6 +45,8 @@ dependencies:
   # Utilities
   intl: ^0.20.2
   url_launcher: ^6.3.1
+  shared_preferences: ^2.5.4
+  http: ^1.2.2
 
   # Payments
   payhere_mobilesdk_flutter: ^3.2.2

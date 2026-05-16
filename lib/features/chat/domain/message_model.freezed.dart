@@ -20,9 +20,12 @@ ConversationModel _$ConversationModelFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ConversationModel {
-  String get id => throw _privateConstructorUsedError;
+  String get id =>
+      throw _privateConstructorUsedError; // Nullable: a conversation can exist before a job is created
+// (the customer taps "Message" on a worker's profile; the job is
+// only created later from inside the chat via "Propose Job").
   @JsonKey(name: 'job_id')
-  String get jobId => throw _privateConstructorUsedError;
+  String? get jobId => throw _privateConstructorUsedError;
   @JsonKey(name: 'customer_id')
   String get customerId => throw _privateConstructorUsedError;
   @JsonKey(name: 'worker_id')
@@ -56,7 +59,7 @@ abstract class $ConversationModelCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      @JsonKey(name: 'job_id') String jobId,
+      @JsonKey(name: 'job_id') String? jobId,
       @JsonKey(name: 'customer_id') String customerId,
       @JsonKey(name: 'worker_id') String workerId,
       @JsonKey(name: 'last_message_at') DateTime? lastMessageAt,
@@ -82,7 +85,7 @@ class _$ConversationModelCopyWithImpl<$Res, $Val extends ConversationModel>
   @override
   $Res call({
     Object? id = null,
-    Object? jobId = null,
+    Object? jobId = freezed,
     Object? customerId = null,
     Object? workerId = null,
     Object? lastMessageAt = freezed,
@@ -96,10 +99,10 @@ class _$ConversationModelCopyWithImpl<$Res, $Val extends ConversationModel>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      jobId: null == jobId
+      jobId: freezed == jobId
           ? _value.jobId
           : jobId // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       customerId: null == customerId
           ? _value.customerId
           : customerId // ignore: cast_nullable_to_non_nullable
@@ -142,7 +145,7 @@ abstract class _$$ConversationModelImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
-      @JsonKey(name: 'job_id') String jobId,
+      @JsonKey(name: 'job_id') String? jobId,
       @JsonKey(name: 'customer_id') String customerId,
       @JsonKey(name: 'worker_id') String workerId,
       @JsonKey(name: 'last_message_at') DateTime? lastMessageAt,
@@ -166,7 +169,7 @@ class __$$ConversationModelImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? jobId = null,
+    Object? jobId = freezed,
     Object? customerId = null,
     Object? workerId = null,
     Object? lastMessageAt = freezed,
@@ -180,10 +183,10 @@ class __$$ConversationModelImplCopyWithImpl<$Res>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      jobId: null == jobId
+      jobId: freezed == jobId
           ? _value.jobId
           : jobId // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       customerId: null == customerId
           ? _value.customerId
           : customerId // ignore: cast_nullable_to_non_nullable
@@ -221,7 +224,7 @@ class __$$ConversationModelImplCopyWithImpl<$Res>
 class _$ConversationModelImpl implements _ConversationModel {
   const _$ConversationModelImpl(
       {required this.id,
-      @JsonKey(name: 'job_id') required this.jobId,
+      @JsonKey(name: 'job_id') this.jobId,
       @JsonKey(name: 'customer_id') required this.customerId,
       @JsonKey(name: 'worker_id') required this.workerId,
       @JsonKey(name: 'last_message_at') this.lastMessageAt,
@@ -238,9 +241,12 @@ class _$ConversationModelImpl implements _ConversationModel {
 
   @override
   final String id;
+// Nullable: a conversation can exist before a job is created
+// (the customer taps "Message" on a worker's profile; the job is
+// only created later from inside the chat via "Propose Job").
   @override
   @JsonKey(name: 'job_id')
-  final String jobId;
+  final String? jobId;
   @override
   @JsonKey(name: 'customer_id')
   final String customerId;
@@ -349,7 +355,7 @@ class _$ConversationModelImpl implements _ConversationModel {
 abstract class _ConversationModel implements ConversationModel {
   const factory _ConversationModel(
           {required final String id,
-          @JsonKey(name: 'job_id') required final String jobId,
+          @JsonKey(name: 'job_id') final String? jobId,
           @JsonKey(name: 'customer_id') required final String customerId,
           @JsonKey(name: 'worker_id') required final String workerId,
           @JsonKey(name: 'last_message_at') final DateTime? lastMessageAt,
@@ -363,10 +369,12 @@ abstract class _ConversationModel implements ConversationModel {
       _$ConversationModelImpl.fromJson;
 
   @override
-  String get id;
+  String get id; // Nullable: a conversation can exist before a job is created
+// (the customer taps "Message" on a worker's profile; the job is
+// only created later from inside the chat via "Propose Job").
   @override
   @JsonKey(name: 'job_id')
-  String get jobId;
+  String? get jobId;
   @override
   @JsonKey(name: 'customer_id')
   String get customerId;

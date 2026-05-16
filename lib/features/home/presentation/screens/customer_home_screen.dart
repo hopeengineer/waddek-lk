@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +8,27 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/loading_shimmer.dart';
 import '../../../../core/widgets/neon_card.dart';
+import '../../../../core/utils/i18n_helpers.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../profile/data/profile_repository.dart';
+import '../../../profile/domain/profile_model.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+
+/// Inline-search query for the customer home. When length >= 2, the
+/// discovery body switches from nearby workers to search results.
+final homeSearchQueryProvider =
+    StateProvider.autoDispose<String>((ref) => '');
+
+/// Search results fetched by the home page's inline search bar.
+/// Empty when query is too short.
+final homeSearchResultsProvider =
+    FutureProvider.autoDispose<List<ProfileModel>>((ref) async {
+  final query = ref.watch(homeSearchQueryProvider);
+  final categoryId = ref.watch(selectedDiscoveryCategoryProvider);
+  if (query.length < 2) return [];
+  final repo = ref.read(profileRepositoryProvider);
+  return repo.searchWorkers(query: query, categoryId: categoryId);
+});
 
 /// Customer home — discovery feed of nearby workers, filterable by
 /// category chip and an online-only toggle. Replaces the old static
@@ -22,6 +44,11 @@ class CustomerHomeScreen extends ConsumerWidget {
     final workersAsync = ref.watch(nearbyWorkersProvider);
     final selectedCat = ref.watch(selectedDiscoveryCategoryProvider);
     final onlineOnly = ref.watch(discoveryOnlineOnlyProvider);
+    final searchQuery = ref.watch(homeSearchQueryProvider);
+    final isSearching = searchQuery.length >= 2;
+    final searchResults = ref.watch(homeSearchResultsProvider);
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context);
 
     return Scaffold(
       body: Container(
@@ -42,7 +69,6 @@ class CustomerHomeScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                     child: _Header(
                       name: profileAsync.valueOrNull?.fullName,
-                      avatarUrl: profileAsync.valueOrNull?.avatarUrl,
                     ),
                   ),
                 ),
@@ -52,7 +78,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _SearchBar(onTap: () => context.push('/search')),
+                    child: const _SearchBar(),
                   ),
                 ),
 
@@ -72,7 +98,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                         Expanded(
                           child: _QuickAction(
                             icon: Icons.add_circle_outline,
-                            label: 'Post Job',
+                            label: l10n.postJobShort,
                             color: AppColors.neonCyan,
                             onTap: () => context.pushNamed('create-job'),
                           ),
@@ -81,7 +107,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                         Expanded(
                           child: _QuickAction(
                             icon: Icons.workspace_premium,
-                            label: 'Pro Pass',
+                            label: l10n.proPassShort,
                             color: AppColors.neonAmber,
                             onTap: () => context.pushNamed('propass'),
                           ),
@@ -100,10 +126,10 @@ class CustomerHomeScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text('Nearest workers',
+                          child: Text(l10n.nearestWorkers,
                               style: AppTextStyles.h4),
                         ),
-                        Text('Online only',
+                        Text(l10n.onlineOnly,
                             style: AppTextStyles.bodySmall),
                         const SizedBox(width: 6),
                         // Don't wrap in Transform.scale — on
@@ -150,7 +176,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                         itemBuilder: (ctx, i) {
                           if (i == 0) {
                             return _CategoryChip(
-                              label: 'All',
+                              label: l10n.all,
                               selected: selectedCat == null,
                               onTap: () => ref
                                   .read(selectedDiscoveryCategoryProvider
@@ -161,7 +187,7 @@ class CustomerHomeScreen extends ConsumerWidget {
                           final cat = cats[i - 1];
                           final id = cat['id'] as String;
                           return _CategoryChip(
-                            label: cat['name_en'] as String? ?? '?',
+                            label: localizedCategoryName(cat, locale),
                             selected: selectedCat == id,
                             onTap: () => ref
                                 .read(selectedDiscoveryCategoryProvider
@@ -175,12 +201,16 @@ class CustomerHomeScreen extends ConsumerWidget {
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-                // ── Body: location-aware worker list ───────────
-                _buildDiscoveryBody(
-                  ref: ref,
-                  locationAsync: locationAsync,
-                  workersAsync: workersAsync,
-                ),
+                // ── Body: search results OR location-aware list ──
+                if (isSearching)
+                  _buildSearchBody(context, searchResults, l10n)
+                else
+                  _buildDiscoveryBody(
+                    context: context,
+                    ref: ref,
+                    locationAsync: locationAsync,
+                    workersAsync: workersAsync,
+                  ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
@@ -194,87 +224,116 @@ class CustomerHomeScreen extends ConsumerWidget {
 
 // ── Header (name + avatar) ───────────────────────────────────────
 class _Header extends StatelessWidget {
-  const _Header({this.name, this.avatarUrl});
+  const _Header({this.name});
   final String? name;
-  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final hour = DateTime.now().hour;
     final greeting = hour < 12
-        ? 'Good morning,'
+        ? l10n.morningGreeting
         : hour < 17
-            ? 'Good afternoon,'
-            : 'Good evening,';
+            ? l10n.afternoonGreeting
+            : l10n.eveningGreeting;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(greeting,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: 2),
-              Text(name ?? 'there',
-                  style: AppTextStyles.h2,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: () => GoRouter.of(context).go('/customer/profile'),
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.neonCyan, width: 2),
-            ),
-            child: CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.bgSurface,
-              backgroundImage:
-                  avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-              child: avatarUrl == null
-                  ? const Icon(Icons.person,
-                      color: AppColors.neonCyan, size: 22)
-                  : null,
-            ),
-          ),
-        ),
+        Text(greeting,
+            style: AppTextStyles.bodyMedium
+                .copyWith(color: AppColors.textSecondary)),
+        const SizedBox(height: 2),
+        Text(name ?? l10n.fallbackName,
+            style: AppTextStyles.h2,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
       ],
     );
   }
 }
 
-// ── Search trigger ───────────────────────────────────────────────
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.onTap});
-  final VoidCallback onTap;
+// ── Inline search bar ────────────────────────────────────────────
+class _SearchBar extends ConsumerStatefulWidget {
+  const _SearchBar();
+
+  @override
+  ConsumerState<_SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends ConsumerState<_SearchBar> {
+  final _ctrl = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // Sync local controller with any pre-existing query in provider
+    // (e.g. tab change → return).
+    final existing = ref.read(homeSearchQueryProvider);
+    if (existing.isNotEmpty) _ctrl.text = existing;
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      ref.read(homeSearchQueryProvider.notifier).state = value.trim();
+    });
+    setState(() {}); // refresh the suffix clear icon
+  }
+
+  void _clear() {
+    _ctrl.clear();
+    _debounce?.cancel();
+    ref.read(homeSearchQueryProvider.notifier).state = '';
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.bgCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: AppColors.neonCyan.withOpacity(0.15)),
-        ),
+    final hasQuery = _ctrl.text.isNotEmpty;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.neonCyan.withOpacity(0.15)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            Icon(Icons.search,
-                color: AppColors.neonCyan.withOpacity(0.6)),
+            Icon(Icons.search, color: AppColors.neonCyan.withOpacity(0.6)),
             const SizedBox(width: 12),
-            Text('Find a service or worker...',
-                style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.textDisabled)),
+            Expanded(
+              child: TextField(
+                controller: _ctrl,
+                onChanged: _onChanged,
+                textInputAction: TextInputAction.search,
+                style: const TextStyle(
+                    color: AppColors.textPrimary, fontSize: 15),
+                decoration: InputDecoration(
+                  hintText:
+                      AppLocalizations.of(context)!.findServiceOrWorker,
+                  hintStyle: const TextStyle(color: AppColors.textDisabled),
+                  border: InputBorder.none,
+                  isCollapsed: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+            if (hasQuery)
+              IconButton(
+                icon: const Icon(Icons.clear,
+                    color: AppColors.textSecondary, size: 20),
+                onPressed: _clear,
+              ),
           ],
         ),
       ),
@@ -322,12 +381,99 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
+// ── Search body: results from the inline search bar ─────────────
+//
+// Renders a sliver of worker tiles built from `ProfileModel` results.
+// We adapt each `ProfileModel` into the `Map<String, dynamic>` shape
+// that `_WorkerTile` already consumes, so the visual format stays
+// identical to nearby results. Search results don't have a
+// `distance_m` or `categories` list (different RPC), so those parts
+// of the tile gracefully fall back to empty.
+Widget _buildSearchBody(BuildContext context,
+    AsyncValue<List<ProfileModel>> resultsAsync, AppLocalizations l10n) {
+  return resultsAsync.when(
+    loading: () => const SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.neonCyan),
+        ),
+      ),
+    ),
+    error: (e, _) => SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Text(l10n.searchFailed,
+            style: AppTextStyles.bodySmall),
+      ),
+    ),
+    data: (workers) {
+      if (workers.isEmpty) {
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+            child: Center(
+              child: Column(
+                children: [
+                  const Icon(Icons.search_off,
+                      color: AppColors.textDisabled, size: 64),
+                  const SizedBox(height: 12),
+                  Text(l10n.noWorkersFound,
+                      style: AppTextStyles.h4
+                          .copyWith(color: AppColors.textSecondary)),
+                  const SizedBox(height: 4),
+                  Text(l10n.tryDifferentSearch,
+                      style: const TextStyle(
+                          color: AppColors.textDisabled, fontSize: 13)),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+      return SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (ctx, i) {
+              final w = workers[i];
+              return _WorkerTile(worker: _profileToMap(w));
+            },
+            childCount: workers.length,
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// Adapter so `_WorkerTile` (which reads from a Map) can render a
+/// `ProfileModel` returned by the search RPC.
+Map<String, dynamic> _profileToMap(ProfileModel p) {
+  return {
+    'id': p.id,
+    'full_name': p.fullName,
+    'avatar_url': p.avatarUrl,
+    'tier': p.tier,
+    'average_rating': p.averageRating,
+    'jobs_completed_count': p.jobsCompletedCount,
+    'verification_status': p.verificationStatus,
+    'is_online': p.isOnline,
+    'is_pro': p.isPro,
+    // search RPC doesn't expose distance or categories
+    'distance_m': null,
+    'categories': const <Map<String, dynamic>>[],
+  };
+}
+
 // ── Discovery body: handles permission states ────────────────────
 // Must be a function, not a ConsumerWidget — it returns a Sliver, and
 // CustomScrollView.slivers only accepts widgets whose Element produces
 // a RenderSliver. Wrapping the returned sliver inside a ConsumerWidget
 // (RenderBox) makes the viewport silently render nothing.
 Widget _buildDiscoveryBody({
+  required BuildContext context,
   required WidgetRef ref,
   required AsyncValue<({double lat, double lng})?> locationAsync,
   required AsyncValue<List<Map<String, dynamic>>> workersAsync,
@@ -370,24 +516,25 @@ Widget _buildDiscoveryBody({
         ),
         data: (workers) {
           if (workers.isEmpty) {
-            return const SliverToBoxAdapter(
+            final l10n = AppLocalizations.of(context)!;
+            return SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                     horizontal: 20, vertical: 40),
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.location_searching,
+                      const Icon(Icons.location_searching,
                           color: AppColors.textSecondary, size: 48),
-                      SizedBox(height: 12),
-                      Text('No workers match this filter',
-                          style: TextStyle(
+                      const SizedBox(height: 12),
+                      Text(l10n.noWorkersMatch,
+                          style: const TextStyle(
                               color: AppColors.textPrimary)),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                          'Try a different category or turn off "Online only".',
+                          l10n.tryDifferentCategory,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 13)),
                     ],
@@ -426,24 +573,23 @@ class _LocationPrompt extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.location_off,
+                  const Icon(Icons.location_off,
                       color: AppColors.neonAmber, size: 22),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Text('Enable location to see workers near you',
-                        style: TextStyle(
+                    child: Text(AppLocalizations.of(context)!.enableLocation,
+                        style: const TextStyle(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Waddek shows workers in your area sorted by distance. '
-                'Without location we can\'t rank them.',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.enableLocationDesc,
+                style: const TextStyle(
                     color: AppColors.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 12),
@@ -453,8 +599,8 @@ class _LocationPrompt extends StatelessWidget {
                   onPressed: onRetry,
                   icon: const Icon(Icons.my_location,
                       color: AppColors.neonCyan, size: 16),
-                  label: const Text('Try again',
-                      style: TextStyle(color: AppColors.neonCyan)),
+                  label: Text(AppLocalizations.of(context)!.tryAgain,
+                      style: const TextStyle(color: AppColors.neonCyan)),
                 ),
               ),
             ],
@@ -492,20 +638,30 @@ class _WorkerTile extends StatelessWidget {
     final name = worker['full_name'] as String? ?? 'Worker';
     final id = worker['id'] as String;
     final verified = worker['verification_status'] == 'verified';
+    final isPro = worker['is_pro'] == true;
+    final locale = Localizations.localeOf(context);
+    final categoriesRaw = worker['categories'];
+    final categories = (categoriesRaw is List)
+        ? categoriesRaw
+            .whereType<Map<String, dynamic>>()
+            .map((c) => localizedCategoryName(c, locale))
+            .where((s) => s.isNotEmpty && s != '?')
+            .toList()
+        : const <String>[];
 
-    final distanceLabel = distanceM < 1000
-        ? '${distanceM.round()} m'
-        : '${(distanceM / 1000).toStringAsFixed(distanceM < 10000 ? 1 : 0)} km';
+    // distanceM is NaN when the row came from the search RPC (which
+    // doesn't compute distance). Empty label in that case.
+    final distanceLabel = distanceM.isNaN
+        ? ''
+        : distanceM < 1000
+            ? '${distanceM.round()} m'
+            : '${(distanceM / 1000).toStringAsFixed(distanceM < 10000 ? 1 : 0)} km';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: NeonCard(
-        child: InkWell(
-          onTap: () => GoRouter.of(context).push('/workers/$id'),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
+    return NeonCard(
+      onTap: () => GoRouter.of(context).push('/workers/$id'),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      child: Row(
               children: [
                 Stack(
                   children: [
@@ -561,7 +717,12 @@ class _WorkerTile extends StatelessWidget {
                           if (verified) ...[
                             const SizedBox(width: 4),
                             const Icon(Icons.verified,
-                                color: AppColors.neonGreen, size: 14),
+                                color: AppColors.neonPurple, size: 14),
+                          ],
+                          if (isPro) ...[
+                            const SizedBox(width: 4),
+                            const Icon(Icons.workspace_premium,
+                                color: AppColors.neonAmber, size: 14),
                           ],
                         ],
                       ),
@@ -586,12 +747,25 @@ class _WorkerTile extends StatelessWidget {
                                     fontSize: 12)),
                             const SizedBox(width: 10),
                           ],
-                          Text('$jobs jobs',
+                          Text(
+                              AppLocalizations.of(context)!.jobsCountLabel(jobs),
                               style: const TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 12)),
                         ],
                       ),
+                      if (categories.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          categories.join(' • '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                              height: 1.2),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -611,9 +785,6 @@ class _WorkerTile extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
     );
   }
 }

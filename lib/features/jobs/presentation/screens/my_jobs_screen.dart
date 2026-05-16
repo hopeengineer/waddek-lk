@@ -6,6 +6,7 @@ import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/features/profile/presentation/providers/profile_provider.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 import '../providers/jobs_provider.dart';
 import '../../domain/job_model.dart';
 
@@ -32,19 +33,20 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
   @override
   Widget build(BuildContext context) {
     final jobsAsync = ref.watch(customerJobsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Jobs')),
+      appBar: AppBar(title: Text(l10n.myJobs)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/jobs/create'),
         icon: const Icon(Icons.add),
-        label: const Text('Post Job'),
+        label: Text(l10n.postJob),
         backgroundColor: AppColors.neonCyan,
         foregroundColor: AppColors.bgDark,
       ),
       body: jobsAsync.when(
         loading: () => const LoadingShimmer(),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${l10n.error}: $e')),
         data: (jobs) {
           if (jobs.isEmpty) {
             return Center(
@@ -54,12 +56,13 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen> {
                   const Icon(Icons.work_off,
                       color: AppColors.textSecondary, size: 64),
                   const SizedBox(height: 16),
-                  const Text('No jobs yet',
-                      style: TextStyle(
+                  Text(l10n.noJobsYet,
+                      style: const TextStyle(
                           color: AppColors.textPrimary, fontSize: 18)),
                   const SizedBox(height: 8),
-                  const Text('Post your first job to find workers',
-                      style: TextStyle(color: AppColors.textSecondary)),
+                  Text(l10n.postFirstJob,
+                      style: const TextStyle(
+                          color: AppColors.textSecondary)),
                 ],
               ),
             );
@@ -122,12 +125,13 @@ class _AvailableJobsScreenState extends ConsumerState<AvailableJobsScreen> {
   @override
   Widget build(BuildContext context) {
     final jobsAsync = ref.watch(availableJobsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Available Jobs')),
+      appBar: AppBar(title: Text(l10n.availableJobs)),
       body: jobsAsync.when(
         loading: () => const LoadingShimmer(),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${l10n.error}: $e')),
         data: (jobs) {
           if (jobs.isEmpty) {
             return RefreshIndicator(
@@ -138,17 +142,16 @@ class _AvailableJobsScreenState extends ConsumerState<AvailableJobsScreen> {
                   Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.search_off,
+                      children: [
+                        const Icon(Icons.search_off,
                             color: AppColors.textSecondary, size: 64),
-                        SizedBox(height: 16),
-                        Text('No available jobs right now',
-                            style: TextStyle(
+                        const SizedBox(height: 16),
+                        Text(l10n.noAvailableJobs,
+                            style: const TextStyle(
                                 color: AppColors.textPrimary, fontSize: 18)),
-                        SizedBox(height: 8),
-                        Text(
-                            'We\'ll notify you when new jobs match your skills',
-                            style: TextStyle(
+                        const SizedBox(height: 8),
+                        Text(l10n.noJobsNotifyDesc,
+                            style: const TextStyle(
                                 color: AppColors.textSecondary)),
                       ],
                     ),
@@ -182,9 +185,10 @@ class _JobListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final statusColor = _statusColor(job.status);
     final categoryName =
-        job.categoryData?['name_en'] as String? ?? 'Unknown';
+        job.categoryData?['name_en'] as String? ?? l10n.unknown;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),

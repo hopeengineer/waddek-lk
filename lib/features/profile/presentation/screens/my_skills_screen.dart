@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 import '../providers/profile_provider.dart';
 
 /// Worker manages their selected service categories.
@@ -75,11 +76,12 @@ class _MySkillsScreenState extends ConsumerState<MySkillsScreen> {
       }
     });
 
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('My Skills')),
+      appBar: AppBar(title: Text(l10n.mySkills)),
       body: categoriesAsync.when(
         loading: () => const LoadingShimmer(),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${l10n.error}: $e')),
         data: (categories) {
           return Column(
             children: [

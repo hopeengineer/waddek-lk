@@ -1,0 +1,12 @@
+{
+  "name": "waddek-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static host for the Flutter web build of waddek-lk.",
+  "scripts": {
+    "start": "serve -s public -l $PORT --no-clipboard"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}

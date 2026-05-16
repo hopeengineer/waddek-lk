@@ -59,7 +59,7 @@ serve(async (req: Request) => {
     const { data: profile, error: profErr } = await supabase
       .from("profiles")
       .select(
-        "id, verification_status, verification_attempts, verification_locked_until, identity_locked",
+        "id, verification_status, verification_attempts, verification_locked_until, identity_locked, avatar_url",
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -102,16 +102,31 @@ serve(async (req: Request) => {
       }, 429);
     }
 
+    // ── Profile picture gate ───────────────────────────────
+    // Before attempts 1 & 2 we require an uploaded profile picture
+    // to use as Shufti's face.proof reference. The 3rd attempt is a
+    // forced live-selfie — no upload needed.
+    const upcomingAttempt = profile.verification_attempts + 1;
+    const isLiveSelfieAttempt = upcomingAttempt >= MAX_LIFETIME_ATTEMPTS;
+
+    if (!isLiveSelfieAttempt && !profile.avatar_url) {
+      return json({
+        error:
+          "Upload your profile picture first — Shufti uses it to match against your ID.",
+        needs_avatar: true,
+      }, 400);
+    }
+
     // ── Build Shufti payload ────────────────────────────────
     // verification_mode: video_only — selfie video for liveness + match.
-    // document.supported_types — restrict to the doc the user chose.
-    // dob "" + document_number "" — Shufti extracts these via OCR.
-    // fetch_enhanced_data "1" — return the full extracted set (gender,
-    // nationality, etc.) on the verification.accepted event.
+    // face.proof: avatar URL on attempts 1 & 2 (Shufti checks uploaded
+    // photo against the ID and the live video). On attempt 3 we omit
+    // it — Shufti's onsite UI captures a live selfie which becomes
+    // the new locked avatar (handled in shuftipro-callback).
     const reference = `${user.id}-${Date.now()}`;
     const callbackUrl = `${SUPABASE_URL}/functions/v1/shuftipro-callback`;
 
-    const shuftiBody = {
+    const shuftiBody: Record<string, unknown> = {
       reference,
       callback_url: callbackUrl,
       email: user.email ?? "",
@@ -128,9 +143,9 @@ serve(async (req: Request) => {
         document_number: "",
         fetch_enhanced_data: "1",
       },
-      face: {
-        proof: "",
-      },
+      face: isLiveSelfieAttempt
+        ? { proof: "" }
+        : { proof: profile.avatar_url },
     };
 
     const basicAuth = btoa(`${SHUFTIPRO_CLIENT_ID}:${SHUFTIPRO_SECRET_KEY}`);

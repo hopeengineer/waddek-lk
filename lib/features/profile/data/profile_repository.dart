@@ -1,6 +1,4 @@
-import 'dart:io';
-
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:typed_data';
 
 import 'package:waddek_lk/core/constants/supabase_constants.dart';
 import 'package:waddek_lk/core/services/supabase_service.dart';
@@ -99,38 +97,121 @@ class ProfileRepository {
     return List<Map<String, dynamic>>.from(data as List);
   }
 
-  /// Search workers by name fuzzy match. If [categoryId] is supplied,
-  /// limit to workers who registered that category in
-  /// `worker_categories`.
+  /// Search workers by name OR service/category name. If [categoryId]
+  /// is supplied (e.g. from a chip), results are intersected with
+  /// workers registered in that specific category.
+  ///
+  /// Match strategy when [query] is set:
+  ///   1. Workers whose `full_name` ILIKE %query%.
+  ///   2. Categories whose `name_en` / `name_si` / `name_ta` ILIKE
+  ///      %query% → look up workers registered in those categories.
+  ///   3. Union both sets, dedupe by id.
+  ///   4. Intersect with the [categoryId] chip filter if any.
   Future<List<ProfileModel>> searchWorkers({
     required String query,
     String? categoryId,
   }) async {
-    // Limit to worker accounts (current role or signup role).
-    var builder = _client
-        .from(SupabaseConstants.profiles)
-        .select()
-        .or('role.eq.worker,active_role.eq.worker');
+    final hasQuery = query.isNotEmpty;
+    final hasChip = categoryId != null && categoryId.isNotEmpty;
+    if (!hasQuery && !hasChip) return [];
 
-    if (query.isNotEmpty) {
-      builder = builder.ilike('full_name', '%$query%');
-    }
-
-    if (categoryId != null && categoryId.isNotEmpty) {
+    // No text query — just return all workers in the chip's category.
+    if (!hasQuery) {
       final rows = await _client
           .from(SupabaseConstants.workerCategories)
           .select('worker_id')
-          .eq('category_id', categoryId);
+          .eq('category_id', categoryId!);
       final workerIds = rows
           .map<String>((r) => r['worker_id'] as String)
           .toList(growable: false);
       if (workerIds.isEmpty) return [];
-      builder = builder.inFilter('id', workerIds);
+      final data = await _client
+          .from(SupabaseConstants.profiles)
+          .select()
+          .or('role.eq.worker,active_role.eq.worker')
+          .inFilter('id', workerIds)
+          .order('average_rating', ascending: false)
+          .limit(20);
+      return data.map<ProfileModel>((p) => ProfileModel.fromJson(p)).toList();
     }
 
-    final data =
-        await builder.order('average_rating', ascending: false).limit(20);
-    return data.map<ProfileModel>((p) => ProfileModel.fromJson(p)).toList();
+    // Text query path: name match ∪ service-name match.
+    final results = <String, ProfileModel>{};
+
+    // 1. Name match.
+    final byName = await _client
+        .from(SupabaseConstants.profiles)
+        .select()
+        .or('role.eq.worker,active_role.eq.worker')
+        .ilike('full_name', '%$query%')
+        .limit(20);
+    for (final row in byName) {
+      final m = ProfileModel.fromJson(row);
+      results[m.id] = m;
+    }
+
+    // 2. Service/category-name match → workers registered in those.
+    final cats = await _client
+        .from(SupabaseConstants.categories)
+        .select('id')
+        .or('name_en.ilike.%$query%,name_si.ilike.%$query%,name_ta.ilike.%$query%');
+    final catIds =
+        cats.map<String>((c) => c['id'] as String).toList(growable: false);
+    if (catIds.isNotEmpty) {
+      final wcRows = await _client
+          .from(SupabaseConstants.workerCategories)
+          .select('worker_id')
+          .inFilter('category_id', catIds);
+      final workerIds = wcRows
+          .map<String>((r) => r['worker_id'] as String)
+          .toSet()
+          .toList(growable: false);
+      if (workerIds.isNotEmpty) {
+        final byService = await _client
+            .from(SupabaseConstants.profiles)
+            .select()
+            .or('role.eq.worker,active_role.eq.worker')
+            .inFilter('id', workerIds)
+            .limit(20);
+        for (final row in byService) {
+          final m = ProfileModel.fromJson(row);
+          results[m.id] = m;
+        }
+      }
+    }
+
+    // 3. Tier match — query starts to match a known tier name in any
+    //    supported language. Returns all workers on that tier.
+    final matchedTier = _matchTier(query);
+    if (matchedTier != null) {
+      final byTier = await _client
+          .from(SupabaseConstants.profiles)
+          .select()
+          .or('role.eq.worker,active_role.eq.worker')
+          .eq('tier', matchedTier)
+          .limit(20);
+      for (final row in byTier) {
+        final m = ProfileModel.fromJson(row);
+        results[m.id] = m;
+      }
+    }
+
+    // 4. Intersect with chip filter if any.
+    if (hasChip) {
+      final chipRows = await _client
+          .from(SupabaseConstants.workerCategories)
+          .select('worker_id')
+          .eq('category_id', categoryId!);
+      final keep = chipRows
+          .map<String>((r) => r['worker_id'] as String)
+          .toSet();
+      results.removeWhere((id, _) => !keep.contains(id));
+    }
+
+    // Sort by rating desc, cap.
+    final list = results.values.toList()
+      ..sort((a, b) => b.averageRating.compareTo(a.averageRating));
+    return list.take(20).toList();
   }
 
   // ── Create / Update ──────────────────────────────────────
@@ -189,17 +270,24 @@ class ProfileRepository {
     final point = 'POINT($longitude $latitude)';
     final fields = <String, dynamic>{
       'location': point,
+      // Mirror the same coordinates as plain doubles so PostgREST
+      // returns them on every read — the geography column comes
+      // back as opaque WKB hex which the Flutter model can't parse.
+      'latitude': latitude,
+      'longitude': longitude,
       if (addressText != null) 'address_text': addressText,
     };
     return updateProfile(userId: userId, fields: fields);
   }
 
-  /// Upload avatar and update profile.
+  /// Upload avatar and update profile. Takes raw bytes so the path
+  /// works on Flutter web (where `dart:io.File` throws _Namespace
+  /// errors) and mobile alike — callers should hand over the result
+  /// of `XFile.readAsBytes()` from image_picker.
   Future<String> uploadAvatar({
     required String userId,
-    required String filePath,
+    required Uint8List bytes,
   }) async {
-    final bytes = await File(filePath).readAsBytes();
     final url = await StorageService.uploadAvatar(userId, bytes);
     await updateProfile(userId: userId, fields: {'avatar_url': url});
     return url;
@@ -208,12 +296,10 @@ class ProfileRepository {
   /// Upload NIC photos and update profile.
   Future<void> uploadNicPhotos({
     required String userId,
-    required String frontPath,
-    required String backPath,
+    required Uint8List frontBytes,
+    required Uint8List backBytes,
     required String nicNumber,
   }) async {
-    final frontBytes = await File(frontPath).readAsBytes();
-    final backBytes = await File(backPath).readAsBytes();
     final frontUrl = await StorageService.uploadNicPhoto(userId, 'front', frontBytes);
     final backUrl = await StorageService.uploadNicPhoto(userId, 'back', backBytes);
     await updateProfile(userId: userId, fields: {
@@ -254,12 +340,11 @@ class ProfileRepository {
   /// Upload a portfolio image.
   Future<String> addPortfolioImage({
     required String workerId,
-    required String filePath,
+    required Uint8List bytes,
     String? caption,
   }) async {
     final fileName =
         '${DateTime.now().millisecondsSinceEpoch}';
-    final bytes = await File(filePath).readAsBytes();
     final url = await StorageService.uploadPortfolioImage(workerId, fileName, bytes);
     await _client.from(SupabaseConstants.portfolioImages).insert({
       'worker_id': workerId,
@@ -276,4 +361,37 @@ class ProfileRepository {
         .delete()
         .eq('id', imageId);
   }
+}
+
+/// Returns the tier enum value that the search query is a prefix of,
+/// across English, Sinhala and Tamil. Returns null when the query is
+/// too short or doesn't match any tier prefix. Using `startsWith` keeps
+/// the matching tight — typing "wad" matches `waddek`, but typing "p"
+/// alone won't match all tiers (it has to start the tier word).
+String? _matchTier(String query) {
+  final q = query.trim().toLowerCase();
+  if (q.length < 2) return null;
+
+  // waddek (Sinhala slang for "expert") — brand-aware in SI / TA.
+  const waddekAliases = ['waddek', 'වැඩ්ඩෙක්', 'வத்தெக்'];
+  for (final a in waddekAliases) {
+    if (a.toLowerCase().startsWith(q)) return 'waddek';
+  }
+
+  const professionalAliases = [
+    'professional',
+    'pro',
+    'වෘත්තීය',
+    'தொழில்முறை',
+  ];
+  for (final a in professionalAliases) {
+    if (a.toLowerCase().startsWith(q)) return 'professional';
+  }
+
+  const supiriAliases = ['supiri', 'සුපිරි', 'சூப்பிரி'];
+  for (final a in supiriAliases) {
+    if (a.toLowerCase().startsWith(q)) return 'supiri';
+  }
+
+  return null;
 }

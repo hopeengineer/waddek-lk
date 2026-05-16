@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../core/widgets/neon_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// OTP verification screen — user enters the 6-digit code sent to their phone.
@@ -93,8 +94,9 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
       case 'change_phone':
         success = await notifier.verifyPhoneChange(code);
         if (success && mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Phone updated.')),
+            SnackBar(content: Text(l10n.phoneUpdated)),
           );
           context.pop();
         }
@@ -126,6 +128,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Container(
@@ -146,10 +149,10 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                 const Spacer(),
 
                 // Title
-                Text('Verify your number', style: AppTextStyles.h2),
+                Text(l10n.verifyNumber, style: AppTextStyles.h2),
                 const SizedBox(height: 8),
                 Text(
-                  'Code sent to ${Helpers.maskPhone(widget.phone)}',
+                  l10n.codeSentTo(Helpers.maskPhone(widget.phone)),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -228,7 +231,7 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
 
                 // Verify button
                 NeonButton(
-                  label: 'Verify',
+                  label: l10n.verify,
                   onPressed: authState.isLoading ? null : _verify,
                   isLoading: authState.isLoading,
                 ),
@@ -241,14 +244,14 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                       ? TextButton(
                           onPressed: _resend,
                           child: Text(
-                            'Resend code',
+                            l10n.resendCode,
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.neonCyan,
                             ),
                           ),
                         )
                       : Text(
-                          'Resend in ${_resendSeconds}s',
+                          l10n.resendIn(_resendSeconds),
                           style: AppTextStyles.bodySmall,
                         ),
                 ),

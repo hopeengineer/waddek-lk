@@ -50,3 +50,6 @@ app.*.map.json
 .env.local
 .env.production
 supabase/.temp/
+
+# Flutter web build staged for Railway deploy — regenerated per build
+web-deploy/public/

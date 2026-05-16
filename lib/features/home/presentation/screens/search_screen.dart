@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/neon_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../profile/data/profile_repository.dart';
 import '../../../profile/domain/profile_model.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
@@ -83,6 +84,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     final hasFilter = query.isNotEmpty || categoryId != null;
 
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
@@ -91,11 +93,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           focusNode: _focusNode,
           onChanged: _onChanged,
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
-          decoration: const InputDecoration(
-            hintText: 'Search workers, services...',
-            hintStyle: TextStyle(color: AppColors.textDisabled),
+          decoration: InputDecoration(
+            hintText: l10n.searchHint,
+            hintStyle: const TextStyle(color: AppColors.textDisabled),
             border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
         ),
         actions: [
@@ -118,14 +120,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildCategorySuggestions(
       AsyncValue<List<Map<String, dynamic>>> categoriesAsync) {
+    final l10n = AppLocalizations.of(context)!;
     return categoriesAsync.when(
       loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.neonCyan)),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => Center(child: Text('${l10n.error}: $e')),
       data: (categories) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Popular Services',
+          Text(l10n.popularServices,
               style: AppTextStyles.h4),
           const SizedBox(height: 12),
           Wrap(
@@ -194,6 +197,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _buildResultsList(AsyncValue<List<ProfileModel>> resultsAsync) {
+    final l10n = AppLocalizations.of(context)!;
     return resultsAsync.when(
       loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.neonCyan)),
@@ -204,7 +208,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             const Icon(Icons.error_outline,
                 color: AppColors.neonRed, size: 48),
             const SizedBox(height: 16),
-            Text('Search failed', style: AppTextStyles.bodyMedium),
+            Text(l10n.searchFailed, style: AppTextStyles.bodyMedium),
           ],
         ),
       ),
@@ -214,15 +218,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.search_off,
+                const Icon(Icons.search_off,
                     color: AppColors.textDisabled, size: 64),
                 const SizedBox(height: 16),
-                Text('No workers found',
+                Text(l10n.noWorkersFound,
                     style: AppTextStyles.h4
                         .copyWith(color: AppColors.textSecondary)),
                 const SizedBox(height: 4),
-                Text('Try a different search term',
-                    style: TextStyle(
+                Text(l10n.tryDifferentSearch,
+                    style: const TextStyle(
                         color: AppColors.textDisabled, fontSize: 13)),
               ],
             ),
@@ -299,7 +303,7 @@ class _WorkerResultCard extends StatelessWidget {
                           if (worker.verificationStatus == 'verified') ...[
                             const SizedBox(width: 4),
                             const Icon(Icons.verified,
-                                color: AppColors.neonGreen, size: 16),
+                                color: AppColors.neonPurple, size: 16),
                           ],
                         ],
                       ),

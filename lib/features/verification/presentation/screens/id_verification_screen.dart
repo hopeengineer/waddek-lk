@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/neon_button.dart';
 import '../../../../core/widgets/neon_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/verification_provider.dart';
 
@@ -48,9 +50,15 @@ class _IdVerificationScreenState extends ConsumerState<IdVerificationScreen> {
     final isLocked =
         lockedUntil != null && lockedUntil.isAfter(DateTime.now());
     final declineReason = profile?.shuftiproDeclineReason;
+    final attemptsUsed = profile?.verificationAttempts ?? 0;
+    // Attempt 3 is the forced live-selfie path — no avatar required.
+    final isLiveSelfieAttempt = attemptsUsed >= 2;
+    final needsAvatar =
+        !isLiveSelfieAttempt && (profile?.avatarUrl == null);
 
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Identity verification')),
+      appBar: AppBar(title: Text(l10n.identityVerification)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -63,9 +71,38 @@ class _IdVerificationScreenState extends ConsumerState<IdVerificationScreen> {
             else ...[
               if (isLocked)
                 _LockedCard(lockedUntil: lockedUntil)
+              else if (needsAvatar)
+                _AvatarRequiredCard(
+                  attemptsUsed: attemptsUsed,
+                  onPickAvatar: _pickAvatar,
+                )
               else ...[
-                const Text('Pick the document you will use',
-                    style: TextStyle(
+                if (isLiveSelfieAttempt)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: NeonCard(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.videocam,
+                                color: AppColors.neonAmber, size: 18),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'This is your final attempt. The selfie Shufti captures during the video will replace your profile picture.',
+                                style: TextStyle(
+                                    color: AppColors.neonAmber,
+                                    fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                Text(l10n.pickDocument,
+                    style: const TextStyle(
                         color: AppColors.textSecondary, fontSize: 13)),
                 const SizedBox(height: 10),
                 ..._docTypes.map((t) => _DocTile(
@@ -108,8 +145,8 @@ class _IdVerificationScreenState extends ConsumerState<IdVerificationScreen> {
                   ),
                 NeonButton(
                   label: verState.polling
-                      ? 'Waiting for verification…'
-                      : 'Start verification',
+                      ? l10n.waitingForVerification
+                      : l10n.startVerificationBtn,
                   icon: Icons.videocam,
                   isLoading: verState.starting,
                   onPressed: verState.polling ? null : _start,
@@ -126,7 +163,7 @@ class _IdVerificationScreenState extends ConsumerState<IdVerificationScreen> {
                 if (profile != null) ...[
                   const SizedBox(height: 20),
                   Text(
-                    'Attempts used: ${profile.verificationAttempts} of 3',
+                    l10n.attemptsUsed(profile.verificationAttempts, 3),
                     style: const TextStyle(
                         color: AppColors.textSecondary, fontSize: 12),
                     textAlign: TextAlign.center,
@@ -156,6 +193,88 @@ class _IdVerificationScreenState extends ConsumerState<IdVerificationScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _pickAvatar() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1000,
+    );
+    if (picked == null || !mounted) return;
+    try {
+      final bytes = await picked.readAsBytes();
+      await ref.read(currentProfileProvider.notifier).uploadAvatar(bytes);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile picture uploaded.'),
+            backgroundColor: AppColors.neonGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload failed: $e'),
+            backgroundColor: AppColors.neonRed,
+          ),
+        );
+      }
+    }
+  }
+}
+
+class _AvatarRequiredCard extends StatelessWidget {
+  const _AvatarRequiredCard({
+    required this.attemptsUsed,
+    required this.onPickAvatar,
+  });
+
+  final int attemptsUsed;
+  final VoidCallback onPickAvatar;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSecondAttempt = attemptsUsed == 1;
+    return NeonCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.face, color: AppColors.neonCyan, size: 22),
+                SizedBox(width: 8),
+                Text('Upload your profile picture',
+                    style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              isSecondAttempt
+                  ? 'Your previous photo did not match your ID. Upload a clearer photo of your face — make sure it is well-lit and head-on.'
+                  : 'Required for verification. Shufti compares this photo against your ID and the live video. Use a clear, front-facing photo of your face.',
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            NeonButton(
+              label: isSecondAttempt
+                  ? 'Upload a different photo'
+                  : 'Upload profile picture',
+              icon: Icons.upload,
+              onPressed: onPickAvatar,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -274,7 +393,7 @@ class _VerifiedBanner extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: const [
-            Icon(Icons.verified, color: AppColors.neonGreen, size: 28),
+            Icon(Icons.verified, color: AppColors.neonPurple, size: 28),
             SizedBox(width: 12),
             Expanded(
               child: Text(

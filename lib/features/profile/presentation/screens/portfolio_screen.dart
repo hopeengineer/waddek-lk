@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
+import 'package:waddek_lk/l10n/app_localizations.dart';
 import '../providers/profile_provider.dart';
 
 /// Worker portfolio management: list images, upload more, delete.
@@ -36,9 +37,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
     setState(() => _uploading = true);
     try {
+      final bytes = await picked.readAsBytes();
       await ref
           .read(profileRepositoryProvider)
-          .addPortfolioImage(workerId: me.id, filePath: picked.path);
+          .addPortfolioImage(workerId: me.id, bytes: bytes);
       await _refresh();
     } catch (e) {
       if (mounted) {
@@ -100,9 +102,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
       return const Scaffold(body: Center(child: LoadingShimmer()));
     }
     final imagesAsync = ref.watch(workerPortfolioProvider(me.id));
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Portfolio')),
+      appBar: AppBar(title: Text(l10n.portfolio)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _uploading ? null : _addImage,
         icon: _uploading
@@ -119,7 +122,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
       ),
       body: imagesAsync.when(
         loading: () => const LoadingShimmer(),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('${l10n.error}: $e')),
         data: (images) {
           if (images.isEmpty) {
             return RefreshIndicator(

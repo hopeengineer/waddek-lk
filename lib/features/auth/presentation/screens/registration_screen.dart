@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/neon_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 /// Registration form — shown after successful OTP verification for new users.
@@ -42,8 +43,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreedToTerms) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please agree to the Terms of Service')),
+        SnackBar(content: Text(l10n.agreeToTermsRequired)),
       );
       return;
     }
@@ -66,6 +68,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Container(
@@ -82,13 +85,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
                   // Title
                   Center(
-                    child: Text('Create Your Account',
+                    child: Text(l10n.createAccount,
                         style: AppTextStyles.h2),
                   ),
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
-                      'Phone verified: ${widget.phone}',
+                      l10n.phoneVerified(widget.phone),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.neonGreen,
                       ),
@@ -97,7 +100,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
-                      'Complete your profile to get started',
+                      l10n.completeProfile,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -107,7 +110,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   const SizedBox(height: 36),
 
                   // Full legal name
-                  _buildLabel('Full Legal Name'),
+                  _buildLabel(l10n.fullLegalName),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _nameController,
@@ -115,17 +118,17 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     style: AppTextStyles.bodyLarge,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
-                        return 'Enter your full name';
+                        return l10n.fullNameRequired;
                       }
                       if (v.trim().split(' ').length < 2) {
-                        return 'Enter first and last name';
+                        return l10n.firstAndLastNameRequired;
                       }
                       return null;
                     },
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.person_outline,
                           color: AppColors.textSecondary),
-                      hintText: 'e.g. Kamal Perera',
+                      hintText: l10n.fullNameHint,
                       hintStyle: AppTextStyles.bodyMedium
                           .copyWith(color: AppColors.textDisabled),
                     ),
@@ -134,7 +137,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   const SizedBox(height: 20),
 
                   // Email
-                  _buildLabel('Email Address'),
+                  _buildLabel(l10n.emailAddress),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
@@ -144,7 +147,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.email_outlined,
                           color: AppColors.textSecondary),
-                      hintText: 'you@example.com',
+                      hintText: l10n.emailHint,
                       hintStyle: AppTextStyles.bodyMedium
                           .copyWith(color: AppColors.textDisabled),
                     ),
@@ -153,7 +156,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   const SizedBox(height: 20),
 
                   // Password
-                  _buildLabel('Password'),
+                  _buildLabel(l10n.password),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _passwordController,
@@ -161,7 +164,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     style: AppTextStyles.bodyLarge,
                     validator: (v) {
                       if (v == null || v.length < 8) {
-                        return 'Password must be at least 8 characters';
+                        return l10n.passwordMinLength;
                       }
                       return null;
                     },
@@ -169,7 +172,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock_outline,
                           color: AppColors.textSecondary),
-                      hintText: 'Min 8 characters',
+                      hintText: l10n.passwordHint,
                       hintStyle: AppTextStyles.bodyMedium
                           .copyWith(color: AppColors.textDisabled),
                       suffixIcon: IconButton(
@@ -195,7 +198,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   const SizedBox(height: 20),
 
                   // Confirm password
-                  _buildLabel('Confirm Password'),
+                  _buildLabel(l10n.confirmPassword),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _confirmPasswordController,
@@ -203,14 +206,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     style: AppTextStyles.bodyLarge,
                     validator: (v) {
                       if (v != _passwordController.text) {
-                        return 'Passwords do not match';
+                        return l10n.passwordsDontMatch;
                       }
                       return null;
                     },
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock_outline,
                           color: AppColors.textSecondary),
-                      hintText: 'Re-enter password',
+                      hintText: l10n.reEnterPassword,
                       hintStyle: AppTextStyles.bodyMedium
                           .copyWith(color: AppColors.textDisabled),
                       suffixIcon: IconButton(
@@ -250,7 +253,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           onTap: () =>
                               setState(() => _agreedToTerms = !_agreedToTerms),
                           child: Text(
-                            'I agree to the Terms of Service and Privacy Policy',
+                            l10n.termsConsent,
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -275,7 +278,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
                   // CTA
                   NeonButton(
-                    label: 'Create Account',
+                    label: l10n.createAccountCta,
                     onPressed: authState.isLoading ? null : _register,
                     isLoading: authState.isLoading,
                     icon: Icons.how_to_reg_rounded,
@@ -321,15 +324,16 @@ class _PasswordStrengthBar extends StatelessWidget {
     return AppColors.neonGreen;
   }
 
-  String get _label {
-    if (_score <= 1) return 'Weak';
-    if (_score == 2) return 'Fair';
-    if (_score == 3) return 'Good';
-    return 'Strong';
+  String _labelFor(AppLocalizations l10n) {
+    if (_score <= 1) return l10n.pwWeak;
+    if (_score == 2) return l10n.pwFair;
+    if (_score == 3) return l10n.pwGood;
+    return l10n.pwStrong;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -348,7 +352,7 @@ class _PasswordStrengthBar extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Text(
-              _label,
+              _labelFor(l10n),
               style: TextStyle(color: _color, fontSize: 11),
             ),
           ],

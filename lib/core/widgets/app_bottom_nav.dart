@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/role_provider.dart';
 import '../theme/app_colors.dart';
-import '../widgets/role_switch_widget.dart';
 import '../../features/notifications/presentation/providers/notifications_provider.dart';
+import '../../l10n/app_localizations.dart';
+import 'app_global_top_bar.dart';
 
 /// Bottom navigation shell — different tabs for customers vs workers.
 /// Uses [activeRoleProvider] to determine the current role dynamically.
@@ -21,24 +22,24 @@ class AppBottomNav extends ConsumerStatefulWidget {
 class _AppBottomNavState extends ConsumerState<AppBottomNav> {
   int _currentIndex = 0;
 
-  List<_NavItem> get _items {
+  List<_NavItem> _itemsFor(AppLocalizations l10n) {
     final isWorker = ref.read(activeRoleProvider) == 'worker';
+    // Profile lives behind the top-right avatar on every page, so it
+    // doesn't occupy a nav slot. Messages + Alerts take its place since
+    // both roles need quick access to them during an active job.
     return isWorker
         ? [
-            _NavItem(Icons.work, 'Jobs', '/worker/jobs'),
-            _NavItem(Icons.handshake, 'My Bids', '/worker/bids'),
-            _NavItem(Icons.account_balance_wallet, 'Wallet', '/wallet'),
-            _NavItem(Icons.person, 'Profile', '/worker/profile'),
+            _NavItem(Icons.work, l10n.jobs, '/worker/jobs'),
+            _NavItem(Icons.handshake, l10n.myBids, '/worker/bids'),
+            _NavItem(Icons.account_balance_wallet, l10n.wallet, '/wallet'),
+            _NavItem(Icons.chat_bubble, l10n.messages, '/worker/messages'),
+            _NavItem(Icons.notifications, l10n.alerts, '/worker/notifications'),
           ]
         : [
-            // Profile lives behind the top-right avatar on the home
-            // screen, so it doesn't need a nav slot. Messages takes
-            // that slot since it's a primary action customers reach
-            // for during a job.
-            _NavItem(Icons.home, 'Home', '/customer/home'),
-            _NavItem(Icons.work, 'My Jobs', '/customer/jobs'),
-            _NavItem(Icons.chat_bubble, 'Messages', '/customer/messages'),
-            _NavItem(Icons.notifications, 'Alerts', '/customer/notifications'),
+            _NavItem(Icons.home, l10n.home, '/customer/home'),
+            _NavItem(Icons.work, l10n.myJobs, '/customer/jobs'),
+            _NavItem(Icons.chat_bubble, l10n.messages, '/customer/messages'),
+            _NavItem(Icons.notifications, l10n.alerts, '/customer/notifications'),
           ];
   }
 
@@ -46,7 +47,8 @@ class _AppBottomNavState extends ConsumerState<AppBottomNav> {
   Widget build(BuildContext context) {
     // Watch role to rebuild when it changes
     final activeRole = ref.watch(activeRoleProvider);
-    final items = _items;
+    final l10n = AppLocalizations.of(context)!;
+    final items = _itemsFor(l10n);
 
     // Reset tab index when role changes to prevent stale selection
     if (_currentIndex >= items.length) {
@@ -54,6 +56,10 @@ class _AppBottomNavState extends ConsumerState<AppBottomNav> {
     }
 
     return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(48),
+        child: AppGlobalTopBar(isWorker: activeRole == 'worker'),
+      ),
       body: widget.child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -67,48 +73,20 @@ class _AppBottomNavState extends ConsumerState<AppBottomNav> {
           ],
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Role switch strip
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      activeRole == 'worker' ? '🔧 Worker Mode' : '🏠 Customer Mode',
-                      style: TextStyle(
-                        color: activeRole == 'worker'
-                            ? AppColors.neonGreen
-                            : AppColors.neonCyan,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const RoleSwitchWidget(),
-                  ],
-                ),
-              ),
-              // Nav buttons
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: items.asMap().entries.map((entry) {
-                    final i = entry.key;
-                    final item = entry.value;
-                    final isActive = i == _currentIndex;
-                    return _buildNavItem(item, isActive, () {
-                      setState(() => _currentIndex = i);
-                      context.go(item.route);
-                    });
-                  }).toList(),
-                ),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: items.asMap().entries.map((entry) {
+                final i = entry.key;
+                final item = entry.value;
+                final isActive = i == _currentIndex;
+                return _buildNavItem(item, isActive, () {
+                  setState(() => _currentIndex = i);
+                  context.go(item.route);
+                });
+              }).toList(),
+            ),
           ),
         ),
       ),
@@ -116,9 +94,10 @@ class _AppBottomNavState extends ConsumerState<AppBottomNav> {
   }
 
   Widget _buildNavItem(_NavItem item, bool isActive, VoidCallback onTap) {
-    // Show badge for Alerts tab
+    // Show badge for Alerts tab — keyed off the route so localization
+    // of the label doesn't break the comparison.
     Widget? badge;
-    if (item.label == 'Alerts') {
+    if (item.route.endsWith('/notifications')) {
       final unreadAsync = ref.watch(unreadCountProvider);
       final count = unreadAsync.valueOrNull ?? 0;
       if (count > 0) {
