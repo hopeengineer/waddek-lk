@@ -8,6 +8,7 @@ import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/core/widgets/rating_stars.dart';
+import 'package:waddek_lk/core/widgets/trust_badges.dart';
 import '../providers/profile_provider.dart';
 
 /// Worker profile screen — view stats, tier, skills, portfolio.
@@ -48,7 +49,7 @@ class WorkerProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
 
                 // ── Verification Status ──
-                _buildVerificationCard(profile),
+                _VerificationCard(profile: profile),
                 const SizedBox(height: 16),
 
                 // ── Quick Actions ──
@@ -105,16 +106,22 @@ class WorkerProfileScreen extends ConsumerWidget {
 
     return Column(
       children: [
-        CircleAvatar(
-          radius: 48,
-          backgroundColor: AppColors.bgSurface,
-          backgroundImage: profile.avatarUrl != null
-              ? NetworkImage(profile.avatarUrl!)
-              : null,
-          child: profile.avatarUrl == null
-              ? const Icon(Icons.person, size: 44,
-                  color: AppColors.neonCyan)
-              : null,
+        TrustBadges(
+          avatarRadius: 48,
+          isVerified: profile.verificationStatus == 'verified',
+          isPro: profile.isPro,
+          tier: tier,
+          child: CircleAvatar(
+            radius: 48,
+            backgroundColor: AppColors.bgSurface,
+            backgroundImage: profile.avatarUrl != null
+                ? NetworkImage(profile.avatarUrl!)
+                : null,
+            child: profile.avatarUrl == null
+                ? const Icon(Icons.person, size: 44,
+                    color: AppColors.neonCyan)
+                : null,
+          ),
         ),
         const SizedBox(height: 12),
         Text(
@@ -191,51 +198,6 @@ class WorkerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildVerificationCard(profile) {
-    final status = profile.verificationStatus;
-    Color statusColor;
-    IconData statusIcon;
-    String statusText;
-
-    switch (status) {
-      case 'verified':
-        statusColor = AppColors.neonGreen;
-        statusIcon = Icons.verified;
-        statusText = 'Verified';
-        break;
-      case 'pending':
-        statusColor = AppColors.neonAmber;
-        statusIcon = Icons.hourglass_top;
-        statusText = 'Verification Pending';
-        break;
-      case 'rejected':
-        statusColor = AppColors.neonRed;
-        statusIcon = Icons.cancel;
-        statusText = 'Verification Rejected';
-        break;
-      default:
-        statusColor = AppColors.textSecondary;
-        statusIcon = Icons.info_outline;
-        statusText = 'Not Verified — Submit NIC to get verified';
-    }
-
-    return NeonCard(
-      child: ListTile(
-        leading: Icon(statusIcon, color: statusColor),
-        title: Text(statusText,
-            style: TextStyle(color: statusColor, fontWeight: FontWeight.w600)),
-        subtitle: status == 'unverified'
-            ? const Text('Upload your NIC to start receiving jobs',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12))
-            : null,
-        trailing: status == 'unverified'
-            ? const Icon(Icons.arrow_forward_ios,
-                color: AppColors.neonCyan, size: 16)
-            : null,
-      ),
-    );
-  }
-
   Widget _actionTile(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -245,6 +207,77 @@ class WorkerProfileScreen extends ConsumerWidget {
       trailing: const Icon(Icons.chevron_right,
           color: AppColors.textSecondary),
       onTap: onTap,
+    );
+  }
+}
+
+class _VerificationCard extends StatelessWidget {
+  const _VerificationCard({required this.profile});
+  final dynamic profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = profile.verificationStatus as String;
+    final reason = profile.shuftiproDeclineReason as String?;
+
+    late final Color color;
+    late final IconData icon;
+    late final String title;
+    late final String? subtitle;
+    late final VoidCallback? tapHandler;
+
+    switch (status) {
+      case 'verified':
+        color = AppColors.neonGreen;
+        icon = Icons.verified;
+        title = 'Verified';
+        subtitle = null;
+        tapHandler = null;
+        break;
+      case 'pending':
+        color = AppColors.neonAmber;
+        icon = Icons.hourglass_top;
+        title = 'Verification in progress';
+        subtitle = 'Complete the verification in your browser tab.';
+        tapHandler = () => context.pushNamed('verification');
+        break;
+      case 'duplicate_detected':
+        color = AppColors.neonAmber;
+        icon = Icons.account_circle;
+        title = 'Existing account detected';
+        subtitle = 'Choose how to continue.';
+        tapHandler = () => context.pushNamed('duplicate-recovery');
+        break;
+      default:
+        color = AppColors.textSecondary;
+        icon = Icons.shield_outlined;
+        title = 'Verify your identity';
+        subtitle = reason != null && reason.isNotEmpty
+            ? reason
+            : 'Required for Pro Pass, builds trust with customers.';
+        tapHandler = () => context.pushNamed('verification');
+    }
+
+    return NeonCard(
+      child: InkWell(
+        onTap: tapHandler,
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          leading: Icon(icon, color: color),
+          title: Text(title,
+              style:
+                  TextStyle(color: color, fontWeight: FontWeight.w600)),
+          subtitle: subtitle == null
+              ? null
+              : Text(subtitle,
+                  style: const TextStyle(
+                      color: AppColors.textSecondary, fontSize: 12)),
+          trailing: tapHandler == null
+              ? null
+              : const Icon(Icons.arrow_forward_ios,
+                  color: AppColors.neonCyan, size: 16),
+        ),
+      ),
     );
   }
 }

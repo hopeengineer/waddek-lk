@@ -25,6 +25,8 @@ import '../../features/profile/presentation/screens/worker_detail_screen.dart';
 import '../../features/profile/presentation/screens/worker_profile_screen.dart';
 import '../../features/profile/presentation/screens/worker_onboarding_screen.dart';
 import '../../features/jobs/presentation/screens/create_job_screen.dart';
+import '../../features/verification/presentation/screens/id_verification_screen.dart';
+import '../../features/verification/presentation/screens/duplicate_recovery_screen.dart';
 import '../../features/jobs/presentation/screens/my_jobs_screen.dart';
 import '../../features/jobs/presentation/screens/job_detail_screen.dart';
 import '../../features/jobs/presentation/screens/worker_bids_screen.dart';
@@ -167,6 +169,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return OtpVerifyScreen(
               phone: phone, otpContext: 'password_reset');
         },
+      ),
+      GoRoute(
+        path: '/auth/verify-phone-change',
+        name: 'otp-verify-phone-change',
+        builder: (context, state) {
+          final phone = state.extra as String? ?? '';
+          return OtpVerifyScreen(
+              phone: phone, otpContext: 'change_phone');
+        },
+      ),
+      GoRoute(
+        path: '/verification',
+        name: 'verification',
+        builder: (context, state) => const IdVerificationScreen(),
+      ),
+      GoRoute(
+        path: '/verification/duplicate',
+        name: 'duplicate-recovery',
+        builder: (context, state) => const DuplicateRecoveryScreen(),
       ),
       GoRoute(
         path: '/auth/new-password',

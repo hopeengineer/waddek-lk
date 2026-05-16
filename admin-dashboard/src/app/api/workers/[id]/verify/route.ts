@@ -7,9 +7,18 @@ export async function POST(
 ) {
     const { id } = await params;
 
+    // Manual admin override — flips verification_status and clears
+    // any lock the lifetime-cap put on. The Shufti flow normally
+    // does this via the webhook; this path covers edge cases (lost
+    // doc, mistaken decline, etc.).
     const { error } = await supabaseAdmin
         .from("profiles")
-        .update({ verified: true })
+        .update({
+            verification_status: "verified",
+            identity_locked: true,
+            verification_locked_until: null,
+            shuftipro_decline_reason: null,
+        })
         .eq("id", id);
 
     if (error) {

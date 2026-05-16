@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
@@ -148,17 +149,56 @@ class _ProPassScreenState extends ConsumerState<ProPassScreen> {
             const SizedBox(height: 24),
 
             // ── Subscribe CTA ──
-            NeonButton(
-              label: 'Subscribe to Pro Pass',
-              icon: Icons.workspace_premium,
-              isLoading: _subscribing,
-              onPressed: () => _subscribe(profile),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Cancel anytime. No lock-in.',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
+            if (profile?.verificationStatus != 'verified') ...[
+              NeonCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.shield_outlined,
+                              color: AppColors.neonAmber, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Verify your identity to subscribe',
+                              style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Pro Pass is for verified users only. It takes about a minute.',
+                        style: TextStyle(
+                            color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                      const SizedBox(height: 12),
+                      NeonButton(
+                        label: 'Verify identity',
+                        icon: Icons.videocam,
+                        onPressed: () => context.pushNamed('verification'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[
+              NeonButton(
+                label: 'Subscribe to Pro Pass',
+                icon: Icons.workspace_premium,
+                isLoading: _subscribing,
+                onPressed: () => _subscribe(profile),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Cancel anytime. No lock-in.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+            ],
           ],
         ),
       ),

@@ -89,6 +89,55 @@ serve(async (req: Request) => {
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+    } else if (context === "change_phone") {
+      // For phone change: caller must be authenticated, and the new
+      // phone must not already belong to a different user.
+      const authHeader = req.headers.get("Authorization") ?? "";
+      if (!authHeader.startsWith("Bearer ")) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Authentication required." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const { data: { user }, error: userErr } = await supabase.auth.getUser(
+        authHeader.substring("Bearer ".length)
+      );
+      if (userErr || !user) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid session." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const phoneWithoutPlus = normalizedPhone.replace("+", "");
+      const { data: allUsers } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 200,
+      });
+      const conflict = allUsers?.users?.find(
+        (u: any) => u.id !== user.id &&
+          (u.phone === normalizedPhone || u.phone === phoneWithoutPlus)
+      );
+      if (conflict) {
+        return new Response(
+          JSON.stringify({ success: false, error: "That phone is already on another account." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Stage the new phone in pending_phone. The live phone column
+      // is NOT touched here — it only moves after verify-otp succeeds.
+      const { error: stageErr } = await supabase
+        .from("profiles")
+        .update({ pending_phone: normalizedPhone })
+        .eq("id", user.id);
+      if (stageErr) {
+        console.error("Failed to stage pending_phone:", stageErr);
+        return new Response(
+          JSON.stringify({ success: false, error: "Could not stage phone change." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // ── Rate limit check ────────────────────────────────────

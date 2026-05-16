@@ -115,7 +115,90 @@ serve(async (req: Request) => {
         let userId: string;
         let isNewUser = false;
 
-        if (context === "login_2fa" || context === "password_reset") {
+        if (context === "change_phone") {
+            // ── Phone-change verify: caller must be authenticated, and
+            // their staged pending_phone must equal this verified phone.
+            const authHeader = req.headers.get("Authorization") ?? "";
+            if (!authHeader.startsWith("Bearer ")) {
+                return new Response(
+                    JSON.stringify({ error: "Authentication required." }),
+                    { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+            }
+            const { data: { user }, error: userErr } = await supabase.auth.getUser(
+                authHeader.substring("Bearer ".length)
+            );
+            if (userErr || !user) {
+                return new Response(
+                    JSON.stringify({ error: "Invalid session." }),
+                    { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+            }
+
+            const { data: profile, error: profErr } = await supabase
+                .from("profiles")
+                .select("pending_phone, phone")
+                .eq("id", user.id)
+                .maybeSingle();
+
+            if (profErr || !profile) {
+                return new Response(
+                    JSON.stringify({ error: "Profile not found." }),
+                    { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+            }
+
+            if (profile.pending_phone !== normalizedPhone) {
+                return new Response(
+                    JSON.stringify({ error: "Pending phone mismatch. Request a new code." }),
+                    { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+            }
+
+            const previousPhone = profile.phone as string;
+
+            // Step 1: update auth.users.phone. If this fails, profiles
+            // is untouched so the live phone stays as-is.
+            const { error: authErr } = await supabase.auth.admin.updateUserById(
+                user.id,
+                { phone: normalizedPhone, phone_confirm: true }
+            );
+            if (authErr) {
+                console.error("Failed to update auth.users.phone:", authErr);
+                return new Response(
+                    JSON.stringify({ error: "Could not update phone. Please try again." }),
+                    { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+            }
+
+            // Step 2: commit profiles.phone + clear pending. If this
+            // fails, roll auth.users.phone back so the two stay in sync.
+            const { error: commitErr } = await supabase
+                .from("profiles")
+                .update({ phone: normalizedPhone, pending_phone: null })
+                .eq("id", user.id);
+            if (commitErr) {
+                console.error("Failed to commit phone change to profiles:", commitErr);
+                await supabase.auth.admin.updateUserById(user.id, {
+                    phone: previousPhone,
+                    phone_confirm: true,
+                });
+                return new Response(
+                    JSON.stringify({ error: "Could not update phone. Please try again." }),
+                    { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+            }
+
+            return new Response(
+                JSON.stringify({
+                    success: true,
+                    user_id: user.id,
+                    phone: normalizedPhone,
+                    message: "Phone updated.",
+                }),
+                { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        } else if (context === "login_2fa" || context === "password_reset") {
             // ── Login 2FA / Password reset: user must already exist ─
             const { data: allUsers } = await supabase.auth.admin.listUsers({
                 page: 1,

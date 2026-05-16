@@ -90,6 +90,15 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
           context.goNamed('new-password');
         }
         return;
+      case 'change_phone':
+        success = await notifier.verifyPhoneChange(code);
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Phone updated.')),
+          );
+          context.pop();
+        }
+        return;
       default:
         success = await notifier.verifyOtp(code);
         if (success && mounted) {
@@ -104,6 +113,9 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
     switch (widget.otpContext) {
       case 'password_reset':
         await notifier.sendPasswordResetOtp(widget.phone);
+        break;
+      case 'change_phone':
+        await notifier.sendPhoneChangeOtp(widget.phone);
         break;
       default:
         await notifier.sendOtp(widget.phone);

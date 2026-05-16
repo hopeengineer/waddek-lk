@@ -191,6 +191,64 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Send OTP to a new phone the signed-in user wants to switch to.
+  /// Phone is staged server-side; the live phone is unchanged until
+  /// [verifyPhoneChange] succeeds.
+  Future<bool> sendPhoneChangeOtp(String newPhone) async {
+    state = state.copyWith(
+      flowState: AuthFlowState.sendingOtp,
+      phone: newPhone,
+      isLoading: true,
+    );
+    try {
+      await _repo.requestPhoneChange(newPhone);
+      state = state.copyWith(
+        flowState: AuthFlowState.otpSent,
+        isLoading: false,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+        isLoading: false,
+      );
+      return false;
+    }
+  }
+
+  /// Verify the OTP the user just received on the new phone. On
+  /// success the server has already swapped the phone column in both
+  /// auth.users and profiles.
+  Future<bool> verifyPhoneChange(String code) async {
+    state = state.copyWith(
+      flowState: AuthFlowState.verifying,
+      isLoading: true,
+    );
+    try {
+      await _repo.confirmPhoneChange(newPhone: state.phone, code: code);
+      state = state.copyWith(
+        flowState: AuthFlowState.verified,
+        isLoading: false,
+      );
+      return true;
+    } on AuthException catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: e.message,
+        isLoading: false,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        flowState: AuthFlowState.error,
+        errorMessage: 'Verification failed. Please try again.',
+        isLoading: false,
+      );
+      return false;
+    }
+  }
+
   /// Verify OTP code for 2FA login.
   Future<bool> verify2fa(String code) async {
     state = state.copyWith(

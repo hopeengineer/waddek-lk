@@ -7,9 +7,15 @@ export async function POST(
 ) {
     const { id } = await params;
 
+    // Mark rejected so the user sees the reason and can request a
+    // manual re-review. We deliberately do not flip role here —
+    // role and verification are independent concerns.
     const { error } = await supabaseAdmin
         .from("profiles")
-        .update({ verified: false, role: "customer" }) // Downgrade to customer
+        .update({
+            verification_status: "rejected",
+            shuftipro_decline_reason: "Manually rejected by admin.",
+        })
         .eq("id", id);
 
     if (error) {

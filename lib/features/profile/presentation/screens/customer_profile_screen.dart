@@ -7,6 +7,7 @@ import 'package:waddek_lk/core/theme/app_colors.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
+import 'package:waddek_lk/core/widgets/trust_badges.dart';
 import '../providers/profile_provider.dart';
 
 /// Customer profile screen — view and edit basic info.
@@ -65,19 +66,25 @@ class _CustomerProfileScreenState
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                // ── Avatar ──
+                // ── Avatar with trust-badge ring ──
                 GestureDetector(
                   onTap: _isEditing ? _pickAvatar : null,
-                  child: CircleAvatar(
-                    radius: 52,
-                    backgroundColor: AppColors.bgSurface,
-                    backgroundImage: profile.avatarUrl != null
-                        ? NetworkImage(profile.avatarUrl!)
-                        : null,
-                    child: profile.avatarUrl == null
-                        ? const Icon(Icons.person, size: 48,
-                            color: AppColors.neonCyan)
-                        : null,
+                  child: TrustBadges(
+                    avatarRadius: 52,
+                    isVerified: profile.verificationStatus == 'verified',
+                    isPro: profile.isPro,
+                    tier: profile.tier,
+                    child: CircleAvatar(
+                      radius: 52,
+                      backgroundColor: AppColors.bgSurface,
+                      backgroundImage: profile.avatarUrl != null
+                          ? NetworkImage(profile.avatarUrl!)
+                          : null,
+                      child: profile.avatarUrl == null
+                          ? const Icon(Icons.person, size: 48,
+                              color: AppColors.neonCyan)
+                          : null,
+                    ),
                   ),
                 ),
                 if (_isEditing)
@@ -110,6 +117,63 @@ class _CustomerProfileScreenState
                     onPressed: () => setState(() => _isEditing = false),
                     child: const Text('Cancel',
                         style: TextStyle(color: AppColors.textSecondary)),
+                  ),
+                ],
+
+                // ── Verify identity CTA ──
+                if (!_isEditing &&
+                    profile.verificationStatus != 'verified') ...[
+                  const SizedBox(height: 24),
+                  NeonCard(
+                    child: InkWell(
+                      onTap: () {
+                        if (profile.verificationStatus ==
+                            'duplicate_detected') {
+                          context.pushNamed('duplicate-recovery');
+                        } else {
+                          context.pushNamed('verification');
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppColors.neonCyan.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.shield,
+                                  color: AppColors.neonCyan, size: 24),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text('Verify your identity',
+                                      style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600)),
+                                  SizedBox(height: 2),
+                                  Text(
+                                      'Short video + a photo of your ID. Earns the verified badge.',
+                                      style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios,
+                                color: AppColors.neonCyan, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
 

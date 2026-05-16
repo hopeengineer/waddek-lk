@@ -5,12 +5,15 @@ export const dynamic = "force-dynamic";
 export default async function WorkersPage() {
     const { data: workers } = await supabaseAdmin
         .from("profiles")
-        .select("id, full_name, phone, tier, verified, average_rating, jobs_completed_count, created_at")
+        .select("id, full_name, phone, tier, verification_status, id_doc_type, average_rating, jobs_completed_count, created_at")
         .eq("role", "worker")
         .order("created_at", { ascending: false });
 
-    const pending = workers?.filter((w) => !w.verified) || [];
-    const verified = workers?.filter((w) => w.verified) || [];
+    const pending = workers?.filter((w) =>
+        w.verification_status === "pending" ||
+        w.verification_status === "unverified" ||
+        w.verification_status === "duplicate_detected") || [];
+    const verified = workers?.filter((w) => w.verification_status === "verified") || [];
 
     return (
         <>

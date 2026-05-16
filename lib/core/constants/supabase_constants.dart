@@ -36,4 +36,6 @@ abstract class SupabaseConstants {
   static const fnPayhereReturn = 'payhere-return';
   static const fnManageSubscription = 'manage-subscription';
   static const fnTierReview = 'tier-review';
+  static const fnShuftiStartVerification = 'shufti-start-verification';
+  static const fnRecoverAccountById = 'recover-account-by-id';
 }

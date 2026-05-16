@@ -8,6 +8,7 @@ import 'package:waddek_lk/core/widgets/loading_shimmer.dart';
 import 'package:waddek_lk/core/widgets/neon_button.dart';
 import 'package:waddek_lk/core/widgets/neon_card.dart';
 import 'package:waddek_lk/core/widgets/rating_stars.dart';
+import 'package:waddek_lk/core/widgets/trust_badges.dart';
 import 'package:waddek_lk/features/reviews/presentation/providers/reviews_provider.dart';
 import '../providers/profile_provider.dart';
 
@@ -201,49 +202,46 @@ class _Header extends StatelessWidget {
 
     return Column(
       children: [
-        CircleAvatar(
-          radius: 54,
-          backgroundColor: AppColors.bgSurface,
-          backgroundImage: worker.avatarUrl != null
-              ? NetworkImage(worker.avatarUrl!)
-              : null,
-          child: worker.avatarUrl == null
-              ? const Icon(Icons.person,
-                  size: 50, color: AppColors.neonCyan)
-              : null,
+        TrustBadges(
+          avatarRadius: 54,
+          isVerified: worker.verificationStatus == 'verified',
+          isPro: worker.isPro,
+          tier: tier,
+          child: CircleAvatar(
+            radius: 54,
+            backgroundColor: AppColors.bgSurface,
+            backgroundImage: worker.avatarUrl != null
+                ? NetworkImage(worker.avatarUrl!)
+                : null,
+            child: worker.avatarUrl == null
+                ? const Icon(Icons.person,
+                    size: 50, color: AppColors.neonCyan)
+                : null,
+          ),
         ),
         const SizedBox(height: 12),
         Text(worker.fullName ?? 'Worker', style: AppTextStyles.h2),
         const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: tierColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(tierIcon, color: tierColor, size: 14),
-                  const SizedBox(width: 6),
-                  Text(tier.toUpperCase(),
-                      style: TextStyle(
-                          color: tierColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.1)),
-                ],
-              ),
-            ),
-            if (worker.verificationStatus == 'verified') ...[
-              const SizedBox(width: 8),
-              const Icon(Icons.verified,
-                  color: AppColors.neonGreen, size: 20),
+        Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: tierColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(tierIcon, color: tierColor, size: 14),
+              const SizedBox(width: 6),
+              Text(tier.toUpperCase(),
+                  style: TextStyle(
+                      color: tierColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.1)),
             ],
-          ],
+          ),
         ),
         if (worker.averageRating > 0) ...[
           const SizedBox(height: 10),

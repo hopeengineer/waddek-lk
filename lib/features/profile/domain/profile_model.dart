@@ -29,6 +29,25 @@ class ProfileModel with _$ProfileModel {
     @JsonKey(name: 'fcm_token') String? fcmToken,
     @JsonKey(name: 'preferred_locale') @Default('en') String preferredLocale,
     @JsonKey(name: 'address_text') String? addressText,
+    // Pending contact changes — staged until OTP / link is verified.
+    @JsonKey(name: 'pending_phone') String? pendingPhone,
+    @JsonKey(name: 'pending_email') String? pendingEmail,
+    // ID verification — only `dateOfBirth` is sensitive and never
+    // surfaced in public_profiles; `age` is computed there instead.
+    @JsonKey(name: 'id_doc_type') String? idDocType,
+    @JsonKey(name: 'date_of_birth') DateTime? dateOfBirth,
+    String? gender,
+    String? nationality,
+    int? age,
+    @JsonKey(name: 'identity_locked') @Default(false) bool identityLocked,
+    @JsonKey(name: 'verification_attempts')
+    @Default(0)
+    int verificationAttempts,
+    @JsonKey(name: 'verification_locked_until')
+    DateTime? verificationLockedUntil,
+    @JsonKey(name: 'duplicate_target_user_id') String? duplicateTargetUserId,
+    @JsonKey(name: 'shuftipro_decline_reason') String? shuftiproDeclineReason,
+    @JsonKey(name: 'is_pro') @Default(false) bool isPro,
     // Location stored as PostGIS point — serialized separately
     double? latitude,
     double? longitude,
@@ -69,6 +88,24 @@ class ProfileModel with _$ProfileModel {
       fcmToken: json['fcm_token'] as String?,
       preferredLocale: json['preferred_locale'] as String? ?? 'en',
       addressText: json['address_text'] as String?,
+      pendingPhone: json['pending_phone'] as String?,
+      pendingEmail: json['pending_email'] as String?,
+      idDocType: json['id_doc_type'] as String?,
+      dateOfBirth: json['date_of_birth'] != null
+          ? DateTime.parse(json['date_of_birth'] as String)
+          : null,
+      gender: json['gender'] as String?,
+      nationality: json['nationality'] as String?,
+      age: (json['age'] as num?)?.toInt(),
+      identityLocked: json['identity_locked'] as bool? ?? false,
+      verificationAttempts:
+          (json['verification_attempts'] as num?)?.toInt() ?? 0,
+      verificationLockedUntil: json['verification_locked_until'] != null
+          ? DateTime.parse(json['verification_locked_until'] as String)
+          : null,
+      duplicateTargetUserId: json['duplicate_target_user_id'] as String?,
+      shuftiproDeclineReason: json['shuftipro_decline_reason'] as String?,
+      isPro: json['is_pro'] as bool? ?? false,
       latitude: lat ?? (json['latitude'] as num?)?.toDouble(),
       longitude: lng ?? (json['longitude'] as num?)?.toDouble(),
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,

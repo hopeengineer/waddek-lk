@@ -206,6 +206,60 @@ class AuthRepository {
     await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
+  /// Begin a phone-change. Sends an OTP to [newPhone] via send-otp
+  /// (context=change_phone). The server stages the new value in
+  /// `profiles.pending_phone`; the live `phone` column is untouched
+  /// until [confirmPhoneChange] succeeds.
+  Future<void> requestPhoneChange(String newPhone) async {
+    final ok = await sendOtp(newPhone, context: 'change_phone');
+    if (!ok) throw const AuthException('Failed to send verification code.');
+  }
+
+  /// Finish a phone-change. The edge function verifies the OTP and
+  /// atomically swaps the new phone into both auth.users and profiles,
+  /// rolling back if either side fails.
+  Future<void> confirmPhoneChange({
+    required String newPhone,
+    required String code,
+  }) async {
+    await verifyOtp(newPhone, code, context: 'change_phone');
+  }
+
+  /// Begin an email-change. Uses Supabase's built-in flow: an email
+  /// containing a confirmation link is sent to [newEmail]. The live
+  /// `auth.users.email` (and via trigger, `profiles.email`) only
+  /// changes after the user clicks that link. We also stage the new
+  /// address in `profiles.pending_email` for UI display.
+  Future<void> requestEmailChange(String newEmail) async {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) throw const AuthException('Not authenticated');
+    await _client.auth.updateUser(UserAttributes(email: newEmail));
+    await _client
+        .from(SupabaseConstants.profiles)
+        .update({'pending_email': newEmail}).eq('id', userId);
+  }
+
+  /// Discard a staged phone change. Clears `pending_phone` so the
+  /// edit screen doesn't keep showing a stale "pending verification".
+  Future<void> cancelPhoneChange() async {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) return;
+    await _client
+        .from(SupabaseConstants.profiles)
+        .update({'pending_phone': null}).eq('id', userId);
+  }
+
+  /// Discard a staged email change. Note Supabase still holds the
+  /// pending email confirmation server-side until it expires — this
+  /// just clears the UI-visible pending_email column.
+  Future<void> cancelEmailChange() async {
+    final userId = SupabaseService.currentUserId;
+    if (userId == null) return;
+    await _client
+        .from(SupabaseConstants.profiles)
+        .update({'pending_email': null}).eq('id', userId);
+  }
+
   /// Sign out the current user.
   Future<void> signOut() async {
     await _client.auth.signOut();

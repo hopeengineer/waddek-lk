@@ -50,6 +50,32 @@ mixin _$ProfileModel {
   String get preferredLocale => throw _privateConstructorUsedError;
   @JsonKey(name: 'address_text')
   String? get addressText =>
+      throw _privateConstructorUsedError; // Pending contact changes — staged until OTP / link is verified.
+  @JsonKey(name: 'pending_phone')
+  String? get pendingPhone => throw _privateConstructorUsedError;
+  @JsonKey(name: 'pending_email')
+  String? get pendingEmail =>
+      throw _privateConstructorUsedError; // ID verification — only `dateOfBirth` is sensitive and never
+// surfaced in public_profiles; `age` is computed there instead.
+  @JsonKey(name: 'id_doc_type')
+  String? get idDocType => throw _privateConstructorUsedError;
+  @JsonKey(name: 'date_of_birth')
+  DateTime? get dateOfBirth => throw _privateConstructorUsedError;
+  String? get gender => throw _privateConstructorUsedError;
+  String? get nationality => throw _privateConstructorUsedError;
+  int? get age => throw _privateConstructorUsedError;
+  @JsonKey(name: 'identity_locked')
+  bool get identityLocked => throw _privateConstructorUsedError;
+  @JsonKey(name: 'verification_attempts')
+  int get verificationAttempts => throw _privateConstructorUsedError;
+  @JsonKey(name: 'verification_locked_until')
+  DateTime? get verificationLockedUntil => throw _privateConstructorUsedError;
+  @JsonKey(name: 'duplicate_target_user_id')
+  String? get duplicateTargetUserId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'shuftipro_decline_reason')
+  String? get shuftiproDeclineReason => throw _privateConstructorUsedError;
+  @JsonKey(name: 'is_pro')
+  bool get isPro =>
       throw _privateConstructorUsedError; // Location stored as PostGIS point — serialized separately
   double? get latitude => throw _privateConstructorUsedError;
   double? get longitude => throw _privateConstructorUsedError;
@@ -92,6 +118,20 @@ abstract class $ProfileModelCopyWith<$Res> {
       @JsonKey(name: 'fcm_token') String? fcmToken,
       @JsonKey(name: 'preferred_locale') String preferredLocale,
       @JsonKey(name: 'address_text') String? addressText,
+      @JsonKey(name: 'pending_phone') String? pendingPhone,
+      @JsonKey(name: 'pending_email') String? pendingEmail,
+      @JsonKey(name: 'id_doc_type') String? idDocType,
+      @JsonKey(name: 'date_of_birth') DateTime? dateOfBirth,
+      String? gender,
+      String? nationality,
+      int? age,
+      @JsonKey(name: 'identity_locked') bool identityLocked,
+      @JsonKey(name: 'verification_attempts') int verificationAttempts,
+      @JsonKey(name: 'verification_locked_until')
+      DateTime? verificationLockedUntil,
+      @JsonKey(name: 'duplicate_target_user_id') String? duplicateTargetUserId,
+      @JsonKey(name: 'shuftipro_decline_reason') String? shuftiproDeclineReason,
+      @JsonKey(name: 'is_pro') bool isPro,
       double? latitude,
       double? longitude,
       @JsonKey(name: 'created_at') DateTime? createdAt,
@@ -133,6 +173,19 @@ class _$ProfileModelCopyWithImpl<$Res, $Val extends ProfileModel>
     Object? fcmToken = freezed,
     Object? preferredLocale = null,
     Object? addressText = freezed,
+    Object? pendingPhone = freezed,
+    Object? pendingEmail = freezed,
+    Object? idDocType = freezed,
+    Object? dateOfBirth = freezed,
+    Object? gender = freezed,
+    Object? nationality = freezed,
+    Object? age = freezed,
+    Object? identityLocked = null,
+    Object? verificationAttempts = null,
+    Object? verificationLockedUntil = freezed,
+    Object? duplicateTargetUserId = freezed,
+    Object? shuftiproDeclineReason = freezed,
+    Object? isPro = null,
     Object? latitude = freezed,
     Object? longitude = freezed,
     Object? createdAt = freezed,
@@ -219,6 +272,58 @@ class _$ProfileModelCopyWithImpl<$Res, $Val extends ProfileModel>
           ? _value.addressText
           : addressText // ignore: cast_nullable_to_non_nullable
               as String?,
+      pendingPhone: freezed == pendingPhone
+          ? _value.pendingPhone
+          : pendingPhone // ignore: cast_nullable_to_non_nullable
+              as String?,
+      pendingEmail: freezed == pendingEmail
+          ? _value.pendingEmail
+          : pendingEmail // ignore: cast_nullable_to_non_nullable
+              as String?,
+      idDocType: freezed == idDocType
+          ? _value.idDocType
+          : idDocType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      dateOfBirth: freezed == dateOfBirth
+          ? _value.dateOfBirth
+          : dateOfBirth // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      gender: freezed == gender
+          ? _value.gender
+          : gender // ignore: cast_nullable_to_non_nullable
+              as String?,
+      nationality: freezed == nationality
+          ? _value.nationality
+          : nationality // ignore: cast_nullable_to_non_nullable
+              as String?,
+      age: freezed == age
+          ? _value.age
+          : age // ignore: cast_nullable_to_non_nullable
+              as int?,
+      identityLocked: null == identityLocked
+          ? _value.identityLocked
+          : identityLocked // ignore: cast_nullable_to_non_nullable
+              as bool,
+      verificationAttempts: null == verificationAttempts
+          ? _value.verificationAttempts
+          : verificationAttempts // ignore: cast_nullable_to_non_nullable
+              as int,
+      verificationLockedUntil: freezed == verificationLockedUntil
+          ? _value.verificationLockedUntil
+          : verificationLockedUntil // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      duplicateTargetUserId: freezed == duplicateTargetUserId
+          ? _value.duplicateTargetUserId
+          : duplicateTargetUserId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      shuftiproDeclineReason: freezed == shuftiproDeclineReason
+          ? _value.shuftiproDeclineReason
+          : shuftiproDeclineReason // ignore: cast_nullable_to_non_nullable
+              as String?,
+      isPro: null == isPro
+          ? _value.isPro
+          : isPro // ignore: cast_nullable_to_non_nullable
+              as bool,
       latitude: freezed == latitude
           ? _value.latitude
           : latitude // ignore: cast_nullable_to_non_nullable
@@ -268,6 +373,20 @@ abstract class _$$ProfileModelImplCopyWith<$Res>
       @JsonKey(name: 'fcm_token') String? fcmToken,
       @JsonKey(name: 'preferred_locale') String preferredLocale,
       @JsonKey(name: 'address_text') String? addressText,
+      @JsonKey(name: 'pending_phone') String? pendingPhone,
+      @JsonKey(name: 'pending_email') String? pendingEmail,
+      @JsonKey(name: 'id_doc_type') String? idDocType,
+      @JsonKey(name: 'date_of_birth') DateTime? dateOfBirth,
+      String? gender,
+      String? nationality,
+      int? age,
+      @JsonKey(name: 'identity_locked') bool identityLocked,
+      @JsonKey(name: 'verification_attempts') int verificationAttempts,
+      @JsonKey(name: 'verification_locked_until')
+      DateTime? verificationLockedUntil,
+      @JsonKey(name: 'duplicate_target_user_id') String? duplicateTargetUserId,
+      @JsonKey(name: 'shuftipro_decline_reason') String? shuftiproDeclineReason,
+      @JsonKey(name: 'is_pro') bool isPro,
       double? latitude,
       double? longitude,
       @JsonKey(name: 'created_at') DateTime? createdAt,
@@ -307,6 +426,19 @@ class __$$ProfileModelImplCopyWithImpl<$Res>
     Object? fcmToken = freezed,
     Object? preferredLocale = null,
     Object? addressText = freezed,
+    Object? pendingPhone = freezed,
+    Object? pendingEmail = freezed,
+    Object? idDocType = freezed,
+    Object? dateOfBirth = freezed,
+    Object? gender = freezed,
+    Object? nationality = freezed,
+    Object? age = freezed,
+    Object? identityLocked = null,
+    Object? verificationAttempts = null,
+    Object? verificationLockedUntil = freezed,
+    Object? duplicateTargetUserId = freezed,
+    Object? shuftiproDeclineReason = freezed,
+    Object? isPro = null,
     Object? latitude = freezed,
     Object? longitude = freezed,
     Object? createdAt = freezed,
@@ -393,6 +525,58 @@ class __$$ProfileModelImplCopyWithImpl<$Res>
           ? _value.addressText
           : addressText // ignore: cast_nullable_to_non_nullable
               as String?,
+      pendingPhone: freezed == pendingPhone
+          ? _value.pendingPhone
+          : pendingPhone // ignore: cast_nullable_to_non_nullable
+              as String?,
+      pendingEmail: freezed == pendingEmail
+          ? _value.pendingEmail
+          : pendingEmail // ignore: cast_nullable_to_non_nullable
+              as String?,
+      idDocType: freezed == idDocType
+          ? _value.idDocType
+          : idDocType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      dateOfBirth: freezed == dateOfBirth
+          ? _value.dateOfBirth
+          : dateOfBirth // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      gender: freezed == gender
+          ? _value.gender
+          : gender // ignore: cast_nullable_to_non_nullable
+              as String?,
+      nationality: freezed == nationality
+          ? _value.nationality
+          : nationality // ignore: cast_nullable_to_non_nullable
+              as String?,
+      age: freezed == age
+          ? _value.age
+          : age // ignore: cast_nullable_to_non_nullable
+              as int?,
+      identityLocked: null == identityLocked
+          ? _value.identityLocked
+          : identityLocked // ignore: cast_nullable_to_non_nullable
+              as bool,
+      verificationAttempts: null == verificationAttempts
+          ? _value.verificationAttempts
+          : verificationAttempts // ignore: cast_nullable_to_non_nullable
+              as int,
+      verificationLockedUntil: freezed == verificationLockedUntil
+          ? _value.verificationLockedUntil
+          : verificationLockedUntil // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      duplicateTargetUserId: freezed == duplicateTargetUserId
+          ? _value.duplicateTargetUserId
+          : duplicateTargetUserId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      shuftiproDeclineReason: freezed == shuftiproDeclineReason
+          ? _value.shuftiproDeclineReason
+          : shuftiproDeclineReason // ignore: cast_nullable_to_non_nullable
+              as String?,
+      isPro: null == isPro
+          ? _value.isPro
+          : isPro // ignore: cast_nullable_to_non_nullable
+              as bool,
       latitude: freezed == latitude
           ? _value.latitude
           : latitude // ignore: cast_nullable_to_non_nullable
@@ -439,6 +623,19 @@ class _$ProfileModelImpl implements _ProfileModel {
       @JsonKey(name: 'fcm_token') this.fcmToken,
       @JsonKey(name: 'preferred_locale') this.preferredLocale = 'en',
       @JsonKey(name: 'address_text') this.addressText,
+      @JsonKey(name: 'pending_phone') this.pendingPhone,
+      @JsonKey(name: 'pending_email') this.pendingEmail,
+      @JsonKey(name: 'id_doc_type') this.idDocType,
+      @JsonKey(name: 'date_of_birth') this.dateOfBirth,
+      this.gender,
+      this.nationality,
+      this.age,
+      @JsonKey(name: 'identity_locked') this.identityLocked = false,
+      @JsonKey(name: 'verification_attempts') this.verificationAttempts = 0,
+      @JsonKey(name: 'verification_locked_until') this.verificationLockedUntil,
+      @JsonKey(name: 'duplicate_target_user_id') this.duplicateTargetUserId,
+      @JsonKey(name: 'shuftipro_decline_reason') this.shuftiproDeclineReason,
+      @JsonKey(name: 'is_pro') this.isPro = false,
       this.latitude,
       this.longitude,
       @JsonKey(name: 'created_at') this.createdAt,
@@ -500,6 +697,45 @@ class _$ProfileModelImpl implements _ProfileModel {
   @override
   @JsonKey(name: 'address_text')
   final String? addressText;
+// Pending contact changes — staged until OTP / link is verified.
+  @override
+  @JsonKey(name: 'pending_phone')
+  final String? pendingPhone;
+  @override
+  @JsonKey(name: 'pending_email')
+  final String? pendingEmail;
+// ID verification — only `dateOfBirth` is sensitive and never
+// surfaced in public_profiles; `age` is computed there instead.
+  @override
+  @JsonKey(name: 'id_doc_type')
+  final String? idDocType;
+  @override
+  @JsonKey(name: 'date_of_birth')
+  final DateTime? dateOfBirth;
+  @override
+  final String? gender;
+  @override
+  final String? nationality;
+  @override
+  final int? age;
+  @override
+  @JsonKey(name: 'identity_locked')
+  final bool identityLocked;
+  @override
+  @JsonKey(name: 'verification_attempts')
+  final int verificationAttempts;
+  @override
+  @JsonKey(name: 'verification_locked_until')
+  final DateTime? verificationLockedUntil;
+  @override
+  @JsonKey(name: 'duplicate_target_user_id')
+  final String? duplicateTargetUserId;
+  @override
+  @JsonKey(name: 'shuftipro_decline_reason')
+  final String? shuftiproDeclineReason;
+  @override
+  @JsonKey(name: 'is_pro')
+  final bool isPro;
 // Location stored as PostGIS point — serialized separately
   @override
   final double? latitude;
@@ -514,7 +750,7 @@ class _$ProfileModelImpl implements _ProfileModel {
 
   @override
   String toString() {
-    return 'ProfileModel(id: $id, phone: $phone, role: $role, activeRole: $activeRole, registrationCompleted: $registrationCompleted, tier: $tier, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, bio: $bio, isOnline: $isOnline, averageRating: $averageRating, jobsCompletedCount: $jobsCompletedCount, verificationStatus: $verificationStatus, nicFrontUrl: $nicFrontUrl, nicBackUrl: $nicBackUrl, nicNumber: $nicNumber, fcmToken: $fcmToken, preferredLocale: $preferredLocale, addressText: $addressText, latitude: $latitude, longitude: $longitude, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'ProfileModel(id: $id, phone: $phone, role: $role, activeRole: $activeRole, registrationCompleted: $registrationCompleted, tier: $tier, email: $email, fullName: $fullName, avatarUrl: $avatarUrl, bio: $bio, isOnline: $isOnline, averageRating: $averageRating, jobsCompletedCount: $jobsCompletedCount, verificationStatus: $verificationStatus, nicFrontUrl: $nicFrontUrl, nicBackUrl: $nicBackUrl, nicNumber: $nicNumber, fcmToken: $fcmToken, preferredLocale: $preferredLocale, addressText: $addressText, pendingPhone: $pendingPhone, pendingEmail: $pendingEmail, idDocType: $idDocType, dateOfBirth: $dateOfBirth, gender: $gender, nationality: $nationality, age: $age, identityLocked: $identityLocked, verificationAttempts: $verificationAttempts, verificationLockedUntil: $verificationLockedUntil, duplicateTargetUserId: $duplicateTargetUserId, shuftiproDeclineReason: $shuftiproDeclineReason, isPro: $isPro, latitude: $latitude, longitude: $longitude, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -556,6 +792,30 @@ class _$ProfileModelImpl implements _ProfileModel {
                 other.preferredLocale == preferredLocale) &&
             (identical(other.addressText, addressText) ||
                 other.addressText == addressText) &&
+            (identical(other.pendingPhone, pendingPhone) ||
+                other.pendingPhone == pendingPhone) &&
+            (identical(other.pendingEmail, pendingEmail) ||
+                other.pendingEmail == pendingEmail) &&
+            (identical(other.idDocType, idDocType) ||
+                other.idDocType == idDocType) &&
+            (identical(other.dateOfBirth, dateOfBirth) ||
+                other.dateOfBirth == dateOfBirth) &&
+            (identical(other.gender, gender) || other.gender == gender) &&
+            (identical(other.nationality, nationality) ||
+                other.nationality == nationality) &&
+            (identical(other.age, age) || other.age == age) &&
+            (identical(other.identityLocked, identityLocked) ||
+                other.identityLocked == identityLocked) &&
+            (identical(other.verificationAttempts, verificationAttempts) ||
+                other.verificationAttempts == verificationAttempts) &&
+            (identical(
+                    other.verificationLockedUntil, verificationLockedUntil) ||
+                other.verificationLockedUntil == verificationLockedUntil) &&
+            (identical(other.duplicateTargetUserId, duplicateTargetUserId) ||
+                other.duplicateTargetUserId == duplicateTargetUserId) &&
+            (identical(other.shuftiproDeclineReason, shuftiproDeclineReason) ||
+                other.shuftiproDeclineReason == shuftiproDeclineReason) &&
+            (identical(other.isPro, isPro) || other.isPro == isPro) &&
             (identical(other.latitude, latitude) ||
                 other.latitude == latitude) &&
             (identical(other.longitude, longitude) ||
@@ -589,6 +849,19 @@ class _$ProfileModelImpl implements _ProfileModel {
         fcmToken,
         preferredLocale,
         addressText,
+        pendingPhone,
+        pendingEmail,
+        idDocType,
+        dateOfBirth,
+        gender,
+        nationality,
+        age,
+        identityLocked,
+        verificationAttempts,
+        verificationLockedUntil,
+        duplicateTargetUserId,
+        shuftiproDeclineReason,
+        isPro,
         latitude,
         longitude,
         createdAt,
@@ -626,6 +899,22 @@ abstract class _ProfileModel implements ProfileModel {
       @JsonKey(name: 'fcm_token') final String? fcmToken,
       @JsonKey(name: 'preferred_locale') final String preferredLocale,
       @JsonKey(name: 'address_text') final String? addressText,
+      @JsonKey(name: 'pending_phone') final String? pendingPhone,
+      @JsonKey(name: 'pending_email') final String? pendingEmail,
+      @JsonKey(name: 'id_doc_type') final String? idDocType,
+      @JsonKey(name: 'date_of_birth') final DateTime? dateOfBirth,
+      final String? gender,
+      final String? nationality,
+      final int? age,
+      @JsonKey(name: 'identity_locked') final bool identityLocked,
+      @JsonKey(name: 'verification_attempts') final int verificationAttempts,
+      @JsonKey(name: 'verification_locked_until')
+      final DateTime? verificationLockedUntil,
+      @JsonKey(name: 'duplicate_target_user_id')
+      final String? duplicateTargetUserId,
+      @JsonKey(name: 'shuftipro_decline_reason')
+      final String? shuftiproDeclineReason,
+      @JsonKey(name: 'is_pro') final bool isPro,
       final double? latitude,
       final double? longitude,
       @JsonKey(name: 'created_at') final DateTime? createdAt,
@@ -686,7 +975,45 @@ abstract class _ProfileModel implements ProfileModel {
   @override
   @JsonKey(name: 'address_text')
   String?
-      get addressText; // Location stored as PostGIS point — serialized separately
+      get addressText; // Pending contact changes — staged until OTP / link is verified.
+  @override
+  @JsonKey(name: 'pending_phone')
+  String? get pendingPhone;
+  @override
+  @JsonKey(name: 'pending_email')
+  String?
+      get pendingEmail; // ID verification — only `dateOfBirth` is sensitive and never
+// surfaced in public_profiles; `age` is computed there instead.
+  @override
+  @JsonKey(name: 'id_doc_type')
+  String? get idDocType;
+  @override
+  @JsonKey(name: 'date_of_birth')
+  DateTime? get dateOfBirth;
+  @override
+  String? get gender;
+  @override
+  String? get nationality;
+  @override
+  int? get age;
+  @override
+  @JsonKey(name: 'identity_locked')
+  bool get identityLocked;
+  @override
+  @JsonKey(name: 'verification_attempts')
+  int get verificationAttempts;
+  @override
+  @JsonKey(name: 'verification_locked_until')
+  DateTime? get verificationLockedUntil;
+  @override
+  @JsonKey(name: 'duplicate_target_user_id')
+  String? get duplicateTargetUserId;
+  @override
+  @JsonKey(name: 'shuftipro_decline_reason')
+  String? get shuftiproDeclineReason;
+  @override
+  @JsonKey(name: 'is_pro')
+  bool get isPro; // Location stored as PostGIS point — serialized separately
   @override
   double? get latitude;
   @override
